@@ -1,0 +1,7 @@
+.git
+node_modules
+script.sh
+*.torrent
+*.mp4
+*.mkv
+*.image
