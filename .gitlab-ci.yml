@@ -48,17 +48,14 @@ build_downloader:
 deploy:
     stage: deploy
     image: handspiker2/ci-tools:latest
-    services:
-        - docker:dind
-    
     script:
         - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
         - mkdir -p ~/.ssh
         - eval $(ssh-agent -s)
-        - ssh-keyscan ${DEPLOY_HOST}
+        - ssh-keyscan -H ${DEPLOY_HOST}
         - chmod 600 "$SSH_PRIVATE"
         - ssh-add "$SSH_PRIVATE"
-        - scp *.image ${DOCKER_USER}@${DEPLOY_HOST}:/tmp/
+        - scp -v *.image ${DOCKER_USER}@${DEPLOY_HOST}:/tmp/
         - |
             cat <<"EOF" | ssh ${DOCKER_USER}@${DEPLOY_HOST}
                 cat /tmp/nhk-download.image | docker load
