@@ -55,12 +55,12 @@ deploy:
         - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
         - mkdir -p ~/.ssh
         - eval $(ssh-agent -s)
-        - ssh-keyscan ${DOCKER_HOST}
+        - ssh-keyscan ${DEPLOY_HOST}
         - chmod 600 "$SSH_PRIVATE"
         - ssh-add "$SSH_PRIVATE"
-        - scp *.image ${DOCKER_USER}@${DOCKER_HOST}:/tmp/
+        - scp *.image ${DOCKER_USER}@${DEPLOY_HOST}:/tmp/
         - |
-            cat <<"EOF" | ssh ${DOCKER_USER}@${DOCKER_HOST}
+            cat <<"EOF" | ssh ${DOCKER_USER}@${DEPLOY_HOST}
                 cat /tmp/nhk-download.image | docker load
                 ( docker stop nhk && docker rm nhk ) || true
                 docker run -td --restart unless-stopped --name nhk --network proxy -v /apps/nhk:/usr/share/nginx/html/sonarr -e SONARR_HOST=$SONARR_HOST  -e SONARR_KEY=${SONARR_KEY} -e SEED_HOST=${SEED_HOST} nhk-download
