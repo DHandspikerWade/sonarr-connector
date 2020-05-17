@@ -1,0 +1,45 @@
+image: handspiker2/ci-tools:docker
+
+variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+
+stages:
+    - build
+
+build_feed:
+    stage: build
+    image: handspiker2/ci-tools:docker
+    services:
+        - docker:dind
+    
+    script:
+        - docker version
+        - docker pull alpine:latest
+        - docker pull golang:alpine
+        - docker build --build-arg BUILD_DATE="$(date -I)" -f feed.Dockerfile -t nhk-feed .
+        - docker save nhk-feed > nhk-feed.image
+    only:
+        - master
+    artifacts:
+        expire_in: 1 week
+        paths:
+            - nhk-feed.image
+
+build_downlaoder:
+    stage: build
+    image: handspiker2/ci-tools:docker
+    services:
+        - docker:dind
+    
+    script:
+        - docker version
+        - docker pull nginx:stable
+        - docker build --build-arg BUILD_DATE="$(date -I)" -t nhk-download .
+        - docker save nhk-download > nhk-download.image
+    only:
+        - master
+    artifacts:
+        expire_in: 1 week
+        paths:
+            - nhk-download.image

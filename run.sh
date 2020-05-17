@@ -7,6 +7,7 @@ echo "export LANG=en_US.UTF-8" >> $HOME/.env
 echo "export LANGUAGE=en_US.UTF-8" >> $HOME/.env
 echo "export SONARR_HOST=${SONARR_HOST}" >> $HOME/.env
 echo "export SONARR_KEY=${SONARR_KEY}" >> $HOME/.env
+echo "export SEED_HOST=${SEED_HOST}" >> $HOME/.env
 echo "" >> $HOME/.env
 
 touch /var/log/cron.log

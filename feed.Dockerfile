@@ -16,7 +16,7 @@ COPY feed.go /tmp/
 RUN cd /tmp/ && GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /tmp/feed ./feed.go && chmod +x /tmp/feed
 
 
-FROM alpine
+FROM alpine:latest
 
 VOLUME /data
 ARG BUILD_DATE
