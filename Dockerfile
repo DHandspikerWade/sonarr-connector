@@ -12,17 +12,16 @@ ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
-RUN apt-get update && apt-get install -y -q --no-install-recommends mktorrent cron curl ffmpeg && \
-    curl -sL https://deb.nodesource.com/setup_13.x | bash - && \
-    apt-get install -y nodejs npm && \
-    node -v
-
-ARG BUILD_DATE
-RUN curl -L https://yt-dl.org/downloads/latest/youtube-dl -o /usr/bin/youtube-dl && \
-    chmod a+rx /usr/bin/youtube-dl && \
-    rm -rf /var/lib/apt/lists/* \
+RUN apt-get update && apt-get install -y -q --no-install-recommends mktorrent cron curl ffmpeg \
+    && curl -sL https://deb.nodesource.com/setup_13.x | bash - \
+    && apt-get install -y nodejs \
+    && node -v \
+    && rm -rf /var/lib/apt/lists/* \
     && rm -rf /usr/share/doc/* \
     && rm -rf /usr/share/man/*
+
+RUN curl -L https://yt-dl.org/downloads/latest/youtube-dl -o /usr/bin/youtube-dl && \
+    chmod a+rx /usr/bin/youtube-dl 
     
 COPY package*.json /app/
 RUN cd /app/ && npm ci

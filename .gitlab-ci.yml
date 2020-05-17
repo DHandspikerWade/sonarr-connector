@@ -6,6 +6,7 @@ variables:
 
 stages:
     - build
+    - deploy
 
 build_feed:
     stage: build
@@ -26,7 +27,7 @@ build_feed:
         paths:
             - nhk-feed.image
 
-build_downlaoder:
+build_downloader:
     stage: build
     image: handspiker2/ci-tools:docker
     services:
@@ -43,3 +44,31 @@ build_downlaoder:
         expire_in: 1 week
         paths:
             - nhk-download.image
+
+deploy:
+    stage: deploy
+    image: handspiker2/ci-tools:latest
+    services:
+        - docker:dind
+    
+    script:
+        - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+        - mkdir -p ~/.ssh
+        - eval $(ssh-agent -s)
+        - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+        - ssh-add "$SSH_PRIVATE"
+        - scp *.image ${DOCKER_USER}@${DOCKER_HOST}:/tmp/
+        - |
+            cat <<"EOF" | ssh ${DOCKER_USER}@${DOCKER_HOST}
+                cat /tmp/nhk-download.image | docker load
+                ( docker stop nhk && docker rm nhk ) || true
+                docker run -td --restart unless-stopped --name nhk --network proxy -v /apps/nhk:/usr/share/nginx/html/sonarr -e SONARR_HOST=$SONARR_HOST  -e SONARR_KEY=${SONARR_KEY} -e SEED_HOST=${SEED_HOST} nhk-download
+                
+                cat /tmp/nhk-feed.image | docker load
+                ( docker stop nhk-feed && docker rm nhk-feed ) || true
+                docker run -td --restart unless-stopped --name nhk-feed --network proxy -v /apps/nhk:/data nhk-feed
+                
+                docker image prune -f
+            EOF
+    only:
+        - master
