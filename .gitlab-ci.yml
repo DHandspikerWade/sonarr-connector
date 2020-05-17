@@ -56,6 +56,7 @@ deploy:
         - mkdir -p ~/.ssh
         - eval $(ssh-agent -s)
         - ssh-keyscan ${DOCKER_HOST}
+        - chmod 600 "$SSH_PRIVATE"
         - ssh-add "$SSH_PRIVATE"
         - scp *.image ${DOCKER_USER}@${DOCKER_HOST}:/tmp/
         - |
