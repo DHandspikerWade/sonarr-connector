@@ -56,7 +56,7 @@ deploy:
         - ssh-keyscan -H ${DEPLOY_HOST} >> ~/.ssh/known_hosts
         - chmod 600 "$SSH_PRIVATE"
         - ssh-add "$SSH_PRIVATE"
-        - scp -v *.image ${DOCKER_USER}@${DEPLOY_HOST}:/tmp/
+        - scp *.image ${DOCKER_USER}@${DEPLOY_HOST}:/tmp/
         - |
             cat <<"EOF" | ssh ${DOCKER_USER}@${DEPLOY_HOST}
                 cat /tmp/nhk-download.image | docker load
