@@ -61,11 +61,11 @@ deploy:
             cat <<EOF | ssh ${DOCKER_USER}@${DEPLOY_HOST}
                 cat /tmp/nhk-download.image | docker load
                 ( docker stop nhk && docker rm nhk ) || true
-                docker run -td --restart unless-stopped --name nhk --network proxy -v /apps/nhk:/usr/share/nginx/html/sonarr -e SONARR_HOST=$SONARR_HOST  -e SONARR_KEY=${SONARR_KEY} -e SEED_HOST=${SEED_HOST} -l traefik.protocol=https -l traefik.enable=true -l traefik.frontend.rule="Host:${SEED_HOST};PathPrefix:/sonarr" -l traefik.docker.network=proxy nhk-download 
+                docker run -td --restart unless-stopped --name nhk --network proxy -v /apps/nhk:/usr/share/nginx/html/sonarr -e SONARR_HOST=$SONARR_HOST  -e SONARR_KEY=${SONARR_KEY} -e SEED_HOST=${SEED_HOST} -l traefik.frontend.entryPoints=https -l traefik.enable=true -l traefik.frontend.rule="Host:${SEED_HOST};PathPrefix:/sonarr" -l traefik.docker.network=proxy nhk-download 
                 
                 cat /tmp/nhk-feed.image | docker load
                 ( docker stop nhk-feed && docker rm nhk-feed ) || true
-                docker run -td --restart unless-stopped --name nhk-feed --network proxy -v /apps/nhk:/data -l traefik.protocol=https -l traefik.enable=true -l traefik.frontend.rule="Host:${SEED_HOST};Path:/create_feed.php" -l traefik.docker.network=proxy nhk-feed
+                docker run -td --restart unless-stopped --name nhk-feed --network proxy -v /apps/nhk:/data -l traefik.frontend.entryPoints=https -l traefik.enable=true -l traefik.frontend.rule="Host:${SEED_HOST};Path:/create_feed.php" -l traefik.docker.network=proxy nhk-feed
                 
                 docker image prune -f
             EOF
