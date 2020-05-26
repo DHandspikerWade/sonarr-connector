@@ -38,7 +38,7 @@ func main() {
 				output += fmt.Sprintf("\t<title>%s</title>\n", filename)
 				output += fmt.Sprintf("\t<size>%d</size>\n", 0) // Need the actual file size not hte torrent file
 				output += fmt.Sprintf("\t<guid isPermaLink=\"false\">%s-%d</guid>\n", filename, file.ModTime().Unix())
-				output += fmt.Sprintf("\t<link>%s/sonarr/%s</link>\n", r.Host, filename)
+				output += fmt.Sprintf("\t<link>https://%s/sonarr/%s</link>\n", r.Host, filename)
 				output += fmt.Sprintf("\t<pubDate>%s</pubDate>\n", file.ModTime().Format(time.RFC1123Z))
 				output += "</item>\n"
 
