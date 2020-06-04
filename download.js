@@ -68,6 +68,13 @@ let findSonarrDetails = (function () {
                 item = result[i];
                 if (item && item.monitored) {
                     let needsFile = true;
+                    let compareSlug = toCompareSlug(item.title);
+
+                    // "TBA" effectively means Sonarr doesn't have correct data yet. 
+                    // Would a show ever have an episode with the slug of "tba"? Let's hope not.
+                    if (compareSlug == 'tba') {
+                        continue;
+                    }
 
                     files.forEach((value) => {
                         if (value.id == item.episodeFileId && !value.qualityCutoffNotMet) {
@@ -83,7 +90,8 @@ let findSonarrDetails = (function () {
                         needsFile: needsFile,
                     };
                     
-                    episodes[toCompareSlug(item.title)] = episode;
+                    // TODO: Different seasons may have create duplicate slugs
+                    episodes[compareSlug] = episode;
                 }
             }
 
