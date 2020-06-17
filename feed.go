@@ -56,7 +56,7 @@ func main() {
 			output += "\t<size>1</size>\n"
 			output += "\t<guid isPermaLink=\"false\">PLACEHOLDER</guid>\n"
 			output += fmt.Sprintf("\t<link>https://%s/sonarr/%s</link>\n", r.Host, "404.torrent")
-			output += fmt.Sprintf("\t<pubDate>%s</pubDate>\n", file.ModTime().Format(time.RFC1123Z))
+			output += fmt.Sprintf("\t<pubDate>%s</pubDate>\n", time.Now().Format(time.RFC1123))
 			output += "</item>\n"
 
 			output += fmt.Sprintf("<pubdate>%s</pubdate>", time.Now().Format(time.RFC1123))
