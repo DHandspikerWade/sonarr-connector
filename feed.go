@@ -50,6 +50,15 @@ func main() {
 		}
 
 		if !havePub {
+			// No items; add placeholder as sonarr doesn't like empty feeds
+			output += "<item>\n" 
+			output += "\t<title>PLACEHOLDER</title>\n"
+			output += "\t<size>1</size>\n"
+			output += "\t<guid isPermaLink=\"false\">PLACEHOLDER</guid>\n"
+			output += fmt.Sprintf("\t<link>https://%s/sonarr/%s</link>\n", r.Host, "404.torrent")
+			output += fmt.Sprintf("\t<pubDate>%s</pubDate>\n", file.ModTime().Format(time.RFC1123Z))
+			output += "</item>\n"
+
 			output += fmt.Sprintf("<pubdate>%s</pubdate>", time.Now().Format(time.RFC1123))
 			havePub = true
 		}
