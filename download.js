@@ -43,7 +43,7 @@ function handleVideoData(data) {
             if (episode && episode.needsFile) {
                 let title = episode.title.toLowerCase().replace(/[\[\]\/\?<>\~\\:\*\|\'\":,]/g, '').replace(/\s+/g, '.');
                 let showTitle = episode.seriesSlug.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '.');
-                youtubeDl(NHK_HOST + (data.vod_url || data.url), showTitle + '.S' + episode.season + 'E' + episode.episode + '.' + title);
+                youtubeDl(NHK_HOST + (data.vod_url || data.url), showTitle + '.S' + ('' + episode.season).padStart(2, '0') + 'E' +  ('' + episode.episode).padStart(2, '0') + '.' + title);
             }
         })
     }
