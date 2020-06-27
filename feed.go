@@ -52,7 +52,7 @@ func main() {
 		if !havePub {
 			// No items; add placeholder as sonarr doesn't like empty feeds
 			output += "<item>\n" 
-			output += "\t<title>PLACEHOLDER</title>\n"
+			output += "\t<title>NO RESULTS</title>\n"
 			output += "\t<size>1</size>\n"
 			output += "\t<guid isPermaLink=\"false\">PLACEHOLDER</guid>\n"
 			output += fmt.Sprintf("\t<link>https://%s/sonarr/%s</link>\n", r.Host, "404.torrent")
