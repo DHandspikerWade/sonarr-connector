@@ -59,6 +59,8 @@ deploy:
         - scp *.image ${DOCKER_USER}@${DEPLOY_HOST}:/tmp/
         - |
             cat <<EOF | ssh ${DOCKER_USER}@${DEPLOY_HOST}
+                mkdir -p /apps/nhk
+
                 cat /tmp/nhk-download.image | docker load
                 ( docker stop nhk && docker rm nhk ) || true
                 docker run -td --restart unless-stopped --name nhk --network proxy -v /apps/nhk:/usr/share/nginx/html/sonarr -e SONARR_HOST=$SONARR_HOST  -e SONARR_KEY=${SONARR_KEY} -e SEED_HOST=${SEED_HOST} -l traefik.frontend.entryPoints=https -l traefik.enable=true -l traefik.frontend.rule="Host:${SEED_HOST};PathPrefix:/sonarr" -l traefik.docker.network=proxy nhk-download 
