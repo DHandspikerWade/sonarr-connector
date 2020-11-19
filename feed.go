@@ -1,7 +1,9 @@
 package main
 
 import (
-    "fmt"
+	"fmt"
+	"os"
+	"strings"
 	"net/http"
 	"net/url"
 	"io/ioutil"
@@ -35,9 +37,17 @@ func main() {
 		for _, file := range files {
 			var filename = file.Name()
 			if filepath.Ext(filename) == ".torrent" {
+				var size int64 = 0
+
+				possibleFile := strings.TrimSuffix(filename, ".torrent")
+				mediaStat, err := os.Stat(directory + possibleFile)
+				if err == nil {
+					size = mediaStat.Size()
+				}
+
 				output += "<item>\n" 
 				output += fmt.Sprintf("\t<title>%s</title>\n", filename)
-				output += fmt.Sprintf("\t<size>%d</size>\n", 0) // Need the actual file size not hte torrent file
+				output += fmt.Sprintf("\t<size>%d</size>\n", size) 
 				output += fmt.Sprintf("\t<guid isPermaLink=\"false\">%s-%d</guid>\n", filename, file.ModTime().Unix())
 				output += fmt.Sprintf("\t<link>https://%s/sonarr/%s</link>\n", r.Host, url.PathEscape(filename))
 				output += fmt.Sprintf("\t<pubDate>%s</pubDate>\n", file.ModTime().Format(time.RFC1123Z))
