@@ -13,7 +13,7 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
 RUN apt-get update && apt-get install -y -q --no-install-recommends mktorrent cron curl ffmpeg \
-    && curl -sL https://deb.nodesource.com/setup_13.x | bash - \
+    && curl -sL https://deb.nodesource.com/setup_14.x | bash - \
     && apt-get install -y nodejs \
     && node -v \
     && rm -rf /var/lib/apt/lists/* \
