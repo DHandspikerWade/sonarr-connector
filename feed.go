@@ -37,7 +37,7 @@ func main() {
 		for _, file := range files {
 			var filename = file.Name()
 			if filepath.Ext(filename) == ".torrent" {
-				var size int64 = 0
+				var size int64 = 1 // Default to 1 as Sonarr considers 0 an error state for the whole feed
 
 				possibleFile := strings.TrimSuffix(filename, ".torrent")
 				mediaStat, err := os.Stat(directory + possibleFile)
