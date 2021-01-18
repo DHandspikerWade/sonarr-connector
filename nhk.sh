@@ -17,7 +17,7 @@ find $OUTPUT* -mtime +5 -exec rm -f {} \;
 
 #cd /tmp/ && npm ci --quiet > /dev/null && \
 cd /tmp/ && \
-node /app/download.js --copy 'cp' --http "$SEED" --output "$OUTPUT"
+node /app/nhk.js --copy 'cp' --http "$SEED" --output "$OUTPUT"
 
 sh ./nhk.sh
 rm nhk.sh
