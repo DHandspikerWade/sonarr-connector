@@ -25,7 +25,7 @@ RUN curl -L https://yt-dl.org/downloads/latest/youtube-dl -o /usr/bin/youtube-dl
     
 COPY package*.json /app/
 RUN cd /app/ && npm ci
-COPY *.json *.js run.sh command /app/
+COPY *.json *.js *.sh /app/
 WORKDIR /data
 ENTRYPOINT [ "/app/run.sh" ]
 CMD ["nginx", "-g", "daemon off;"]
@@ -34,3 +34,4 @@ EXPOSE 80
 
 ENV SONARR_HOST ''
 ENV SONARR_KEY ''
+ENV SEED_HOST ''

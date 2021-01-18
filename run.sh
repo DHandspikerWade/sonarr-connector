@@ -12,7 +12,7 @@ echo "" >> $HOME/.env
 
 touch /var/log/cron.log
 
-echo "0 5 * * * . $HOME/.env; /app/command >> /var/log/cron.log 2>&1
+echo "0 5 * * * . $HOME/.env; /app/nhk.sh >> /var/log/cron.log 2>&1
 # This extra line makes it a valid cron" > /app/scheduler.txt
 crontab /app/scheduler.txt
 

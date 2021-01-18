@@ -1,0 +1,141 @@
+const SonarrAPI = require('./sonarr');
+const fs = require('fs');
+
+const SONARR_OPTIONS = {
+    hostname: process.env.SONARR_HOST,
+    apiKey: process.env.SONARR_KEY,
+    port: 443,
+    ssl: true,
+    urlBase: ''
+};
+
+module.exports = function (argv, scriptName) {
+    scriptName = scriptName || 'script';
+    const copyComand = argv.copy || 'scp';
+    const fileDestination = argv.output || '';
+    const webDestination = argv.http || '';
+    const includeDelete = !!argv.delete;
+    const showId = argv.show;
+    const newScript = !argv.append;
+
+    var sonarr = new SonarrAPI(SONARR_OPTIONS);
+
+    if (!(SONARR_OPTIONS.hostname && SONARR_OPTIONS.apiKey && SONARR_OPTIONS.port)) {
+        console.log('Error: Missing sonarr details');
+    }
+
+    const self = {
+        youtubeDl: function (url, output, resolution, quality) {
+            resolution = resolution || '720p';
+            quality = quality || 'WEBRip';
+
+            let filename = (output + '.English.' + resolution + '.' + quality).replace('(', '').replace(')', '')
+            fs.appendFileSync(scriptName + ".sh", "\n" + 'realurl=$(curl -ILs -o /dev/null -w %{url_effective} \'' + url + '\')');
+            fs.appendFileSync(scriptName + ".sh", "\n" + 'nextfilename=$(youtube-dl --get-filename -f best --merge-output-format mkv -o \'' + filename + '.%(ext)s\' "$realurl")');
+            fs.appendFileSync(scriptName + ".sh", "\n" + 'youtube-dl --download-archive \'' + fileDestination + 'archive.txt\' --add-metadata -f best --all-subs --embed-subs --merge-output-format mkv -o \'' + filename + '.%(ext)s\' "$realurl"');
+            fs.appendFileSync(scriptName + ".sh", ' \\' + "\n" + '&& test -f "$nextfilename" && mktorrent -p -a \'udp://127.0.0.1\' -w \'' + webDestination + '\'"$nextfilename" "$nextfilename"');
+            fs.appendFileSync(scriptName + ".sh", ' \\' + "\n" + '&& ' + copyComand + ' "./' + filename + '"* \'' + fileDestination + "\'");
+            fs.appendFileSync(scriptName + ".sh",' \\' + "\n" + '&& curl -i -H "Accept: application/json" -H "Content-Type: application/json" -H "X-Api-Key: $apiKey" -X POST -d \'{"title":"\'"$nextfilename"\'","downloadUrl":"' + webDestination + '\'"$nextfilename"\'.torrent","protocol":"torrent","publishDate":"\'"$date"\'"}\' ' + (SONARR_OPTIONS.ssl ? 'https://' : 'http://') + SONARR_OPTIONS.hostname + '/api/release/push');
+            fs.appendFileSync(scriptName + ".sh","\n" + 'rm -f "./' + filename + "\"*\n");
+        
+            fs.appendFileSync(scriptName + ".sh","echo '' \n");
+        },
+
+        prepareScript: function () {
+            if (newScript) {
+                fs.writeFileSync(scriptName + ".sh", '#!/bin/bash' + "\n" + 'date=$(date -u +"%Y-%m-%d %H:%M:%SZ")' + "\n" + 'apiKey=' + SONARR_OPTIONS.apiKey + "\n\n");
+                includeDelete && fs.writeFileSync(scriptName + ".sh", 'mkdir -p "' + fileDestination + "\"\n");
+                includeDelete && fs.appendFileSync(scriptName + ".sh", 'rm -f"' + fileDestination + "/*\"\n");
+            
+            } else {
+                fs.appendFileSync(scriptName + ".sh", '');
+            }
+            
+            fs.chmodSync(scriptName + ".sh", 0o765);
+        },
+        findSonarrDetails: (function () {
+            let episodes = null;
+            sonarr.get('series', {}).then(
+                serieses => sonarr.get("episode", { "seriesId": showId }).then(function (result) {
+                    let series = null;
+                    
+                    serieses.forEach(value => {
+                        if (value.id == showId) {
+                            series = value;
+                        }
+                    });
+                    
+                    episodes = {};
+                    let item, episode;
+                    for (item of result) {
+                        if (item && item.monitored) {
+                            let compareSlug = self.toCompareSlug(item.title);
+                            // "TBA" effectively means Sonarr doesn't have correct data yet. 
+                            // Would a show ever have an episode with the slug of "tba"? Let's hope not.
+                            if (compareSlug == 'tba') {
+                                continue;
+                            }
+
+                            episode = {
+                                seriesSlug: series.sortTitle.toLowerCase(),
+                                title: item.title,
+                                season: item.seasonNumber,
+                                episode: item.episodeNumber
+                            };
+                            
+                            // TODO: Different seasons may have create duplicate slugs
+                            episodes[compareSlug] = episode;
+                        }
+                    }
+        
+                    // Does it have a file? 
+                    // Has the cuttoff been met? 
+                    // pass back to download
+                }).catch((reason) => {
+                    console.log(reason)
+                })).catch((reason) => {
+                    console.log(reason)
+            });
+        
+            return episodeSlug => {
+                return new Promise((resolve) => {
+                    let loopId = setInterval(() => {
+                        if (episodes) {
+                            clearInterval(loopId);
+        
+                            if (episodeSlug in episodes) {
+                                resolve(episodes[episodeSlug])
+                            } else {
+                                resolve(false);
+                            }
+                        }
+                    }, 100);
+                });
+            }
+        })(),
+
+        toCompareSlug: function(input) {
+            input = input || '';
+            return input.trim().toLowerCase().replace(/[^a-z0-9 -]+/g, ' ').replace(/\s+/g, '-').replace(/\-+/g, '-').replace(/\~/g, '_').replace(/\_+/g, '_');
+        },
+
+        getFileName: function(title) {
+            return new Promise((resolve) => {
+                self.findSonarrDetails(self.toCompareSlug(title)).catch((reason) => {
+                    console.log('failed');
+                    console.log(reason)
+                }).then((episode) => {
+                    if (episode) {
+                        let title = episode.title.toLowerCase().replace(/[\[\]\/\?<>\~\\:\*\|\'\":,]/g, '').replace(/\s+/g, '.');
+                        let showTitle = episode.seriesSlug.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '.');
+                        resolve(showTitle + '.S' + ('' + episode.season).padStart(2, '0') + 'E' +  ('' + episode.episode).padStart(2, '0') + '.' + title);
+                    } else {
+                        resolve('');
+                    }
+                }).catch(() => resolve(''));
+            });
+        }
+    };
+
+    return self;
+}

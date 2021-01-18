@@ -4,3 +4,5 @@ script.sh
 *.mp4
 *.mkv
 *.image
+test-data
+test.sh
