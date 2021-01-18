@@ -15,7 +15,6 @@ module.exports = function (argv, scriptName) {
     const fileDestination = argv.output || '';
     const webDestination = argv.http || '';
     const includeDelete = !!argv.delete;
-    const showId = argv.show;
     const newScript = !argv.append;
 
     var sonarr = new SonarrAPI(SONARR_OPTIONS);
@@ -23,6 +22,9 @@ module.exports = function (argv, scriptName) {
     if (!(SONARR_OPTIONS.hostname && SONARR_OPTIONS.apiKey && SONARR_OPTIONS.port)) {
         console.log('Error: Missing sonarr details');
     }
+
+    // Cache sonarr requests
+    let episodeList = {};
 
     const self = {
         youtubeDl: function (url, output, resolution, quality) {
@@ -53,75 +55,79 @@ module.exports = function (argv, scriptName) {
             
             fs.chmodSync(scriptName + ".sh", 0o765);
         },
-        findSonarrDetails: (function () {
-            let episodes = null;
-            sonarr.get('series', {}).then(
-                serieses => sonarr.get("episode", { "seriesId": showId }).then(function (result) {
-                    let series = null;
-                    
-                    serieses.forEach(value => {
-                        if (value.id == showId) {
-                            series = value;
-                        }
-                    });
-                    
-                    episodes = {};
-                    let item, episode;
-                    for (item of result) {
-                        if (item && item.monitored) {
-                            let compareSlug = self.toCompareSlug(item.title);
-                            // "TBA" effectively means Sonarr doesn't have correct data yet. 
-                            // Would a show ever have an episode with the slug of "tba"? Let's hope not.
-                            if (compareSlug == 'tba') {
-                                continue;
-                            }
+        findSonarrDetails: function (showId, episodeSlug) {
 
-                            episode = {
-                                seriesSlug: series.sortTitle.toLowerCase(),
-                                title: item.title,
-                                season: item.seasonNumber,
-                                episode: item.episodeNumber
-                            };
-                            
-                            // TODO: Different seasons may have create duplicate slugs
-                            episodes[compareSlug] = episode;
-                        }
-                    }
-        
-                    // Does it have a file? 
-                    // Has the cuttoff been met? 
-                    // pass back to download
-                }).catch((reason) => {
-                    console.log(reason)
-                })).catch((reason) => {
-                    console.log(reason)
-            });
-        
-            return episodeSlug => {
-                return new Promise((resolve) => {
-                    let loopId = setInterval(() => {
-                        if (episodes) {
-                            clearInterval(loopId);
-        
-                            if (episodeSlug in episodes) {
-                                resolve(episodes[episodeSlug])
-                            } else {
-                                resolve(false);
+            if (!(showId in episodeList)) {
+                episodeList[showId] = false;
+
+                sonarr.get('series', {}).then(
+                    serieses => sonarr.get("episode", { "seriesId": showId }).then(function (result) {
+                        let series = null;
+                        
+                        serieses.forEach(value => {
+                            if (value.id == showId) {
+                                series = value;
+                            }
+                        });
+                        
+                        episodes = {};
+                        let item, episode;
+                        for (item of result) {
+                            if (item && item.monitored) {
+                                let compareSlug = self.toCompareSlug(item.title);
+                                // "TBA" effectively means Sonarr doesn't have correct data yet. 
+                                // Would a show ever have an episode with the slug of "tba"? Let's hope not.
+                                if (compareSlug == 'tba') {
+                                    continue;
+                                }
+    
+                                episode = {
+                                    seriesSlug: series.sortTitle.toLowerCase(),
+                                    title: item.title,
+                                    season: item.seasonNumber,
+                                    episode: item.episodeNumber
+                                };
+                                
+                                // TODO: Different seasons may have create duplicate slugs
+                                episodes[compareSlug] = episode;
                             }
                         }
-                    }, 100);
+    
+                        episodeList[showId] = episodes;
+            
+                        // Does it have a file? 
+                        // Has the cuttoff been met? 
+                        // pass back to download
+                    }).catch((reason) => {
+                        console.log(reason)
+                    })).catch((reason) => {
+                        console.log(reason)
                 });
             }
-        })(),
+
+            return new Promise((resolve) => {
+                let loopId = setInterval(() => {
+                    if (showId in episodeList && episodeList[showId]) {
+                        clearInterval(loopId);
+    
+                        if (episodeSlug in episodeList[showId]) {
+                            resolve(episodeList[showId][episodeSlug])
+                        } else {
+                            resolve(false);
+                        }
+                    }
+                }, 100);
+            });
+        },
 
         toCompareSlug: function(input) {
             input = input || '';
             return input.trim().toLowerCase().replace(/[^a-z0-9 -]+/g, ' ').replace(/\s+/g, '-').replace(/\-+/g, '-').replace(/\~/g, '_').replace(/\_+/g, '_');
         },
 
-        getFileName: function(title) {
+        getFileName: function(showId, title) {
             return new Promise((resolve) => {
-                self.findSonarrDetails(self.toCompareSlug(title)).catch((reason) => {
+                self.findSonarrDetails(showId, self.toCompareSlug(title)).catch((reason) => {
                     console.log('failed');
                     console.log(reason)
                 }).then((episode) => {

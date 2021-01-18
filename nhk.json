@@ -1,0 +1,25 @@
+{
+    "shows": [
+        {
+            "showId": 209,
+            "nhkSlug": "dwc"
+        },
+        {
+            "showId": 144,
+            "nhkSlug": "japanologyplus"
+        },
+        {
+            "showId": 309,
+            "nhkSlug": "hashtagtokyo"
+        },
+        {
+            "showId": 287,
+            "nhkSlug": "72hours"
+        },
+        {
+            "showId": 360,
+            "nhkSlug": "lunchon"
+        }
+        
+    ]
+}
