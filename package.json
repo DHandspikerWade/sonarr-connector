@@ -9,8 +9,8 @@
   "author": "handspiker2",
   "license": "ISC",
   "dependencies": {
-    "create-torrent": "^3.33.0",
     "minimist": "^1.2.0",
+    "promise-queue": "^2.2.5",
     "request": "^2.88.0"
   }
 }

@@ -1,6 +1,7 @@
 const SonarrAPI = require('./sonarr');
 const fs = require('fs');
 const child_process = require('child_process');
+const Queue = require('promise-queue')
 
 const SONARR_OPTIONS = {
     hostname: process.env.SONARR_HOST,
@@ -9,6 +10,8 @@ const SONARR_OPTIONS = {
     ssl: true,
     urlBase: ''
 };
+
+let shellQueue = new Queue(2, Infinity);
 
 module.exports = function (argv, scriptName) {
     scriptName = scriptName || 'script';
@@ -45,7 +48,7 @@ module.exports = function (argv, scriptName) {
             quality = quality || 'WEBRip';
 
             if (!resolution) { // TODO: Is there a better way? Maybe within an earlier JSON feed?
-                child_process.exec(
+                self.queueShell(
                     // Ask youtube-dl what resolution it's going to download
                     'youtube-dl --no-warnings --no-progress --no-color --ignore-errors -f \'bestvideo+bestaudio/best\' --get-filename -o \'%(height)s\' \'' + url + '\'',
                     (error, stdout, stderr) => {
@@ -147,6 +150,20 @@ module.exports = function (argv, scriptName) {
         toCompareSlug: function(input) {
             input = input || '';
             return input.trim().toLowerCase().replace(/[^a-z0-9 -]+/g, ' ').replace(/\s+/g, '-').replace(/\-+/g, '-').replace(/\~/g, '_').replace(/\_+/g, '_');
+        },
+
+        queueShell: function (cmd, resultCallback) {
+            shellQueue.add(() => {
+                return new Promise((resolve, reject) => {
+                    child_process.exec(
+                        cmd,
+                        (error, stdout, stderr) => {
+                            resultCallback(error, stdout, stderr);
+                            resolve(stdout);
+                        }
+                    );
+                })
+            }).then(() => {}).catch((e) => { console.log('SHELL CATCH: ' + e)})
         },
 
         getFileName: function(showId, title) {
