@@ -1,0 +1,21 @@
+{
+    "shows": [
+        {
+            "showId": 7348,
+            "youtubePlaylist": "https://www.youtube.com/playlist?list=PLTagxffHmpfT765IfQj68dMmfFs3W7s1f",
+            "titleReplacements": {
+                "^YGOTAS Episode (?:\\d+) \\- ": "",
+                "^Episode (?:\\d+) \\- ": "",
+                " \\- LittleKuriboh": ""
+            }
+        },
+        {
+            "showId": 255,
+            "youtubePlaylist": "https://www.youtube.com/playlist?list=PLuAOJfsMefuej06Q3n4QrSSC7qYjQ-FlU",
+            "titleReplacements": {
+                "^SAO Abridged Parody\\:": ""
+            }
+        }
+        
+    ]
+}
