@@ -1,5 +1,6 @@
 const SonarrAPI = require('./sonarr');
 const fs = require('fs');
+const child_process = require('child_process');
 
 const SONARR_OPTIONS = {
     hostname: process.env.SONARR_HOST,
@@ -26,21 +27,44 @@ module.exports = function (argv, scriptName) {
     // Cache sonarr requests
     let episodeList = {};
 
+    function writeToScript(url, outputTitle, quality, resolution) {
+        let filename = (outputTitle + '.English.' + resolution + '.' + quality).replace('(', '').replace(')', '')
+        fs.appendFileSync(scriptName + ".sh", "\n" + 'realurl=$(curl -ILs -o /dev/null -w %{url_effective} \'' + url + '\')');
+        fs.appendFileSync(scriptName + ".sh", "\n" + 'nextfilename=$(youtube-dl --get-filename -f \'bestvideo+bestaudio/best\' --merge-output-format mkv -o \'' + filename + '.%(ext)s\' "$realurl")');
+        fs.appendFileSync(scriptName + ".sh", "\n" + 'youtube-dl --download-archive \'' + fileDestination + 'archive.txt\' --add-metadata -f \'bestvideo+bestaudio/best\' --all-subs --embed-subs --merge-output-format mkv -o \'' + filename + '.%(ext)s\' "$realurl"');
+        fs.appendFileSync(scriptName + ".sh", ' \\' + "\n" + '&& test -f "$nextfilename" && mktorrent -p -a \'udp://127.0.0.1\' -w \'' + webDestination + '\'"$nextfilename" "$nextfilename"');
+        fs.appendFileSync(scriptName + ".sh", ' \\' + "\n" + '&& ' + copyComand + ' "./' + filename + '"* \'' + fileDestination + "\'");
+        fs.appendFileSync(scriptName + ".sh",' \\' + "\n" + '&& curl -i -H "Accept: application/json" -H "Content-Type: application/json" -H "X-Api-Key: $apiKey" -X POST -d \'{"title":"\'"$nextfilename"\'","downloadUrl":"' + webDestination + '\'"$nextfilename"\'.torrent","protocol":"torrent","publishDate":"\'"$date"\'"}\' ' + (SONARR_OPTIONS.ssl ? 'https://' : 'http://') + SONARR_OPTIONS.hostname + '/api/release/push');
+        fs.appendFileSync(scriptName + ".sh","\n" + 'rm -f "./' + filename + "\"*\n");
+    
+        fs.appendFileSync(scriptName + ".sh","echo '' \n");
+    }
+
     const self = {
-        youtubeDl: function (url, output, resolution, quality) {
-            resolution = resolution || '720p';
+        youtubeDl: function (url, output, quality, resolution) {
             quality = quality || 'WEBRip';
 
-            let filename = (output + '.English.' + resolution + '.' + quality).replace('(', '').replace(')', '')
-            fs.appendFileSync(scriptName + ".sh", "\n" + 'realurl=$(curl -ILs -o /dev/null -w %{url_effective} \'' + url + '\')');
-            fs.appendFileSync(scriptName + ".sh", "\n" + 'nextfilename=$(youtube-dl --get-filename -f best --merge-output-format mkv -o \'' + filename + '.%(ext)s\' "$realurl")');
-            fs.appendFileSync(scriptName + ".sh", "\n" + 'youtube-dl --download-archive \'' + fileDestination + 'archive.txt\' --add-metadata -f best --all-subs --embed-subs --merge-output-format mkv -o \'' + filename + '.%(ext)s\' "$realurl"');
-            fs.appendFileSync(scriptName + ".sh", ' \\' + "\n" + '&& test -f "$nextfilename" && mktorrent -p -a \'udp://127.0.0.1\' -w \'' + webDestination + '\'"$nextfilename" "$nextfilename"');
-            fs.appendFileSync(scriptName + ".sh", ' \\' + "\n" + '&& ' + copyComand + ' "./' + filename + '"* \'' + fileDestination + "\'");
-            fs.appendFileSync(scriptName + ".sh",' \\' + "\n" + '&& curl -i -H "Accept: application/json" -H "Content-Type: application/json" -H "X-Api-Key: $apiKey" -X POST -d \'{"title":"\'"$nextfilename"\'","downloadUrl":"' + webDestination + '\'"$nextfilename"\'.torrent","protocol":"torrent","publishDate":"\'"$date"\'"}\' ' + (SONARR_OPTIONS.ssl ? 'https://' : 'http://') + SONARR_OPTIONS.hostname + '/api/release/push');
-            fs.appendFileSync(scriptName + ".sh","\n" + 'rm -f "./' + filename + "\"*\n");
-        
-            fs.appendFileSync(scriptName + ".sh","echo '' \n");
+            if (!resolution) { // TODO: Is there a better way? Maybe within an earlier JSON feed?
+                child_process.exec(
+                    // Ask youtube-dl what resolution it's going to download
+                    'youtube-dl --no-warnings --no-progress --no-color --ignore-errors -f \'bestvideo+bestaudio/best\' --get-filename -o \'%(height)s\' \'' + url + '\'',
+                    (error, stdout, stderr) => {
+                        if (error) {
+                            console.error(`exec error: ${error}`);
+                            return;
+                        }
+
+                        let string = stdout.toString();
+
+                        if (string) {
+                            resolution = string.trim() + 'p';
+                            writeToScript(url, output, quality, resolution);
+                        }
+                    }
+                );
+            } else {
+                writeToScript(url, output, quality, resolution);
+            }
         },
 
         prepareScript: function () {
