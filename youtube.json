@@ -13,6 +13,7 @@
             "showId": 255,
             "youtubePlaylist": "https://www.youtube.com/playlist?list=PLuAOJfsMefuej06Q3n4QrSSC7qYjQ-FlU",
             "titleReplacements": {
+                "Episode 0(\\d+)$": "Episode $1",
                 "^SAO Abridged Parody\\:": ""
             }
         }
