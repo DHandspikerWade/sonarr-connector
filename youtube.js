@@ -17,7 +17,7 @@ function handleDryVideoItem(showId, replacements, title, url) {
     Helpers.getFileName(showId, newTitle).then((newfile) => {
         console.log(newfile);
         if (newfile) {
-            Helpers.youtubeDl(url, newfile, '480p', 'WEB-DL');
+            Helpers.youtubeDl(url, newfile, 'WEB-DL');
         }
     });
 }
@@ -37,14 +37,12 @@ if (settings && settings.shows) {
             {maxBuffer: 1024 * 1024 * 8},
             (error, stdout, stderr) => {
                 if (error) {
-                console.error(`exec error: ${error}`);
-                return;
+                    console.error(`exec error: ${error}`);
+                    return;
                 }
 
                 let items = stdout.toString().trim().split("\n");
                 stdout = null;
-                
-                console.log(items.slice(-1))
 
                 items.slice(-1).forEach((item) => {
                     if (!(item && item.trim())) {
