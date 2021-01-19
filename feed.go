@@ -46,10 +46,12 @@ func main() {
 				}
 
 				output += "<item>\n" 
-				output += fmt.Sprintf("\t<title><![CDATA[%s]]></title>\n", filename)
+				output += fmt.Sprintf("\t<title><![CDATA[%s]]></title>\n", possibleFile)
 				output += fmt.Sprintf("\t<size>%d</size>\n", size) 
+				// output += fmt.Sprintf("\t<contentlength>%d</>\n", size) 
 				output += fmt.Sprintf("\t<guid isPermaLink=\"false\">%s-%d</guid>\n", url.PathEscape(filename), file.ModTime().Unix())
 				output += fmt.Sprintf("\t<link><![CDATA[https://%s/sonarr/%s]]></link>\n", r.Host, url.PathEscape(filename))
+				output += fmt.Sprintf("\t<enclosure url=\"https://%s/sonarr/%s\" type=\"application/x-bittorrent\" />\n", r.Host, url.PathEscape(filename))
 				output += fmt.Sprintf("\t<pubDate>%s</pubDate>\n", file.ModTime().Format(time.RFC1123Z))
 				output += "</item>\n"
 
@@ -69,6 +71,23 @@ func main() {
 			output += fmt.Sprintf("\t<link>https://%s/sonarr/%s</link>\n", r.Host, "404.torrent")
 			output += fmt.Sprintf("\t<pubDate>%s</pubDate>\n", time.Now().Format(time.RFC1123))
 			output += "</item>\n"
+
+			// <title> WillisEarlBeal-BitTorrent </title>
+            //             <description>
+            //                     The Principles of a Protagonist Bundle
+
+            //                     Chicago native Willis Earl Beal came from humble musical beginnings- he
+            //                     began as a street performer of sorts that was prone to leaving homemade
+            //                     novels, artwork and CD-Rs across America to promote his work, suggesting
+            //                     a desire to be heard. Thereafter, he relocated to Albuquerque, NM where
+            //                     he continued his practice of 'gifting' as he simultaneously recorded a
+            //                     set of songs on a discarded karaoke machine that would become Acousmatic
+            //                     Sorcery, his Hot Charity/XL Recordings debut.
+            //             </description>
+            //             <guid> e380a6c5ae0fb15f296d29964a56250780b05ad7 </guid>
+            //             <enclosure
+            //                     url="http://featuredcontent.utorrent.com/torrents/WillisEarlBeal-BitTorrent.torrent"
+            //                     type="application/x-bittorrent" />
 
 			output += fmt.Sprintf("<pubdate>%s</pubdate>", time.Now().Format(time.RFC1123))
 			havePub = true
