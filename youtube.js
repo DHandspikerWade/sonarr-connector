@@ -15,7 +15,6 @@ function handleDryVideoItem(showId, replacements, title, url) {
     }
 
     Helpers.getFileName(showId, newTitle).then((newfile) => {
-        console.log(newfile);
         if (newfile) {
             Helpers.youtubeDl(url, newfile, 'WEB-DL');
         }
