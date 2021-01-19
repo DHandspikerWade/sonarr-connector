@@ -44,7 +44,7 @@ if (settings && settings.shows) {
                 let items = stdout.toString().trim().split("\n");
                 stdout = null;
 
-                items.slice(-1).forEach((item) => {
+                items.forEach((item) => {
                     if (!(item && item.trim())) {
                         return;
                     }
