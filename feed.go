@@ -48,7 +48,7 @@ func main() {
 				output += "<item>\n" 
 				output += fmt.Sprintf("\t<title><![CDATA[%s]]></title>\n", filename)
 				output += fmt.Sprintf("\t<size>%d</size>\n", size) 
-				output += fmt.Sprintf("\t<guid isPermaLink=\"false\">%s-%d</guid>\n", filename, file.ModTime().Unix())
+				output += fmt.Sprintf("\t<guid isPermaLink=\"false\">%s-%d</guid>\n", url.PathEscape(filename), file.ModTime().Unix())
 				output += fmt.Sprintf("\t<link><![CDATA[https://%s/sonarr/%s]]></link>\n", r.Host, url.PathEscape(filename))
 				output += fmt.Sprintf("\t<pubDate>%s</pubDate>\n", file.ModTime().Format(time.RFC1123Z))
 				output += "</item>\n"
