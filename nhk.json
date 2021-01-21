@@ -19,6 +19,21 @@
         {
             "showId": 360,
             "nhkSlug": "lunchon"
+        },
+        {
+            "showId": 297,
+            "nhkSlug": "japaneasy",
+            "titleReplacements": {
+                "^\\#\\d{1,2}\\s": ""
+            }
+        },
+        {
+            "showId": 297,
+            "nhkSlug": "japaneasy2",
+            "titleReplacements": {
+                "^\\#\\d{1,2}\\s": ""
+            },
+            "#comment": "NHK annoyingly has seasons as separate programs"
         }
         
     ]

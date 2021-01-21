@@ -11,6 +11,8 @@ const SONARR_OPTIONS = {
     urlBase: ''
 };
 
+const MIN_DISK_SPACE = 10 * 1024 * 1024; // 10GB in KB
+
 let shellQueue = new Queue(2, Infinity);
 
 module.exports = function (argv, scriptName) {
@@ -31,16 +33,19 @@ module.exports = function (argv, scriptName) {
     let episodeList = {};
 
     function writeToScript(url, outputTitle, quality, resolution) {
-        let filename = (outputTitle + '.English.' + resolution + '.' + quality).replace('(', '').replace(')', '')
-        fs.appendFileSync(scriptName + ".sh", "\n" + 'realurl=$(curl -ILs -o /dev/null -w %{url_effective} \'' + url + '\')');
-        fs.appendFileSync(scriptName + ".sh", "\n" + 'nextfilename=$(youtube-dl --get-filename -f \'bestvideo+bestaudio/best\' --merge-output-format mkv -o \'' + filename + '.%(ext)s\' "$realurl")');
-        fs.appendFileSync(scriptName + ".sh", "\n" + 'youtube-dl --download-archive \'' + fileDestination + 'archive.txt\' --add-metadata -f \'bestvideo+bestaudio/best\' --all-subs --embed-subs --merge-output-format mkv -o \'' + filename + '.%(ext)s\' "$realurl"');
-        fs.appendFileSync(scriptName + ".sh", ' \\' + "\n" + '&& test -f "$nextfilename" && mktorrent -p -a \'udp://127.0.0.1\' -w \'' + webDestination + '\'"$nextfilename" "$nextfilename"');
-        fs.appendFileSync(scriptName + ".sh", ' \\' + "\n" + '&& ' + copyComand + ' "./' + filename + '"* \'' + fileDestination + "\'");
-        fs.appendFileSync(scriptName + ".sh",' \\' + "\n" + '&& curl -i -H "Accept: application/json" -H "Content-Type: application/json" -H "X-Api-Key: $apiKey" -X POST -d \'{"title":"\'"$nextfilename"\'","downloadUrl":"' + webDestination + '\'"$nextfilename"\'.torrent","protocol":"torrent","publishDate":"\'"$date"\'"}\' ' + (SONARR_OPTIONS.ssl ? 'https://' : 'http://') + SONARR_OPTIONS.hostname + '/api/release/push');
-        fs.appendFileSync(scriptName + ".sh","\n" + 'rm -f "./' + filename + "\"*\n");
+        let filename = (outputTitle + '.English.' + resolution + '.' + quality).replace('(', '').replace(')', '');
+
+        fs.appendFileSync(scriptName + ".sh", "\nif [ $(df --output=avail . | tail -n 1) -gt " + MIN_DISK_SPACE + ' ]; then');
+        fs.appendFileSync(scriptName + ".sh", "\n\t" + 'realurl=$(curl -ILs -o /dev/null -w %{url_effective} \'' + url + '\')');
+        fs.appendFileSync(scriptName + ".sh", "\n\t" + 'nextfilename=$(youtube-dl --get-filename -f \'bestvideo+bestaudio/best\' --merge-output-format mkv -o \'' + filename + '.%(ext)s\' "$realurl")');
+        fs.appendFileSync(scriptName + ".sh", "\n\t" + 'youtube-dl --download-archive \'' + fileDestination + 'archive.txt\' --add-metadata -f \'bestvideo+bestaudio/best\' --all-subs --embed-subs --merge-output-format mkv -o \'' + filename + '.%(ext)s\' "$realurl"');
+        fs.appendFileSync(scriptName + ".sh", ' \\' + "\n\t" + '&& test -f "$nextfilename" && mktorrent -p -a \'udp://127.0.0.1\' -w \'' + webDestination + '\'"$nextfilename" "$nextfilename"');
+        fs.appendFileSync(scriptName + ".sh", ' \\' + "\n\t" + '&& ' + copyComand + ' "./' + filename + '"* \'' + fileDestination + "\'");
+        fs.appendFileSync(scriptName + ".sh",' \\' + "\n\t" + '&& curl -i -H "Accept: application/json" -H "Content-Type: application/json" -H "X-Api-Key: $apiKey" -X POST -d \'{"title":"\'"$nextfilename"\'","downloadUrl":"' + webDestination + '\'"$nextfilename"\'.torrent","protocol":"torrent","publishDate":"\'"$date"\'"}\' ' + (SONARR_OPTIONS.ssl ? 'https://' : 'http://') + SONARR_OPTIONS.hostname + '/api/release/push');
+        fs.appendFileSync(scriptName + ".sh","\n\t" + 'rm -f "./' + filename + "\"*");
     
-        fs.appendFileSync(scriptName + ".sh","echo '' \n");
+        fs.appendFileSync(scriptName + ".sh","\n\techo '' \n");
+        fs.appendFileSync(scriptName + ".sh","\nfi \n");
     }
 
     const self = {
