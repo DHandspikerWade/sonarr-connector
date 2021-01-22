@@ -9,7 +9,7 @@ function handleVideoData(data, programSlug, showId) {
     if (data.program_slag === programSlug || data.pgm_gr_id === programSlug) {
         Helpers.getFileName(showId, data.sub_title_clean || data.subtitle).then((newfile) => {
             if (newfile) {
-                Helpers.youtubeDl(NHK_HOST + (data.vod_url || data.url), newfile);
+                Helpers.youtubeDl(NHK_HOST + (data.vod_url || data.url), newfile, 'WEB-DL');
             }
         });
     }
