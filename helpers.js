@@ -1,7 +1,11 @@
 const SonarrAPI = require('./sonarr');
 const fs = require('fs');
+const https = require('https');
+const Url = require('url').URL
 const child_process = require('child_process');
 const Queue = require('promise-queue')
+// shell-escape package annoyingly doesn't check if string
+const shellescape = (a => (b) => a(b.map(c => c + '')))(require('shell-escape'));
 
 const SONARR_OPTIONS = {
     hostname: process.env.SONARR_HOST,
@@ -12,9 +16,27 @@ const SONARR_OPTIONS = {
 };
 
 const DEBUG = process.env.DEBUG && process.env.DEBUG > 0;
+const DEBUG_QUALITY = 'worstvideo+worstaudio/worst';
 const MIN_DISK_SPACE = 10 * 1024 * 1024; // 10GB in KB
 
-let shellQueue = new Queue(2, Infinity);
+function genericShellQueue(queue) {
+    return function (cmd, resultCallback) {
+        queue.add(() => {
+            return new Promise((resolve, reject) => {
+                console.debug(cmd);
+                child_process.exec(
+                    cmd,
+                    (error, stdout, stderr) => {
+                        resultCallback(error, stdout, stderr);
+                        resolve(stdout);
+                    }
+                );
+            })
+        }).then(() => {}).catch((e) => { console.log('SHELL CATCH: ' + e)})
+    };
+}
+
+let queueDownload = genericShellQueue(new Queue(2, Infinity));
 
 module.exports = function (argv, scriptName) {
     scriptName = scriptName || 'script';
@@ -29,36 +51,103 @@ module.exports = function (argv, scriptName) {
         console.debug('Sonarr config: ' + JSON.stringify(SONARR_OPTIONS));
     }
 
+    let self;
     let sonarr = new SonarrAPI(SONARR_OPTIONS);
 
     if (!(SONARR_OPTIONS.hostname && SONARR_OPTIONS.apiKey && SONARR_OPTIONS.port)) {
-        console.log('Error: Missing sonarr details');
+        console.log('Warning: Missing sonarr details');
     }
 
     // Cache sonarr requests
     let episodeList = {};
 
-    function writeToScript(url, outputTitle, quality, resolution) {
-        let filename = (outputTitle + '.English.' + resolution + '.' + quality).replace('(', '').replace(')', '');
+    function getProcessedFilename(filename, url) {
+        return new Promise((resolve) => {
+            self.queueShell(shellescape([
+                'youtube-dl', 
+                '--no-warnings', 
+                '--no-progress', 
+                '--no-color',
+                '--ignore-errors', 
+                '--get-filename', 
+                '-f', (DEBUG ? DEBUG_QUALITY : 'bestvideo+bestaudio/best'), 
+                '--merge-output-format', 'mkv', 
+                '-o', filename + '.%(ext)s', 
+                url
+            ]),  (error, stdout) => {
+                if (error) {
+                    console.error(`exec error: ${error}`);
+                    return;
+                }
 
-        fs.appendFileSync(scriptName + ".sh", "\nif [ $(df --output=avail . | tail -n 1) -gt " + MIN_DISK_SPACE + ' ]; then');
-        fs.appendFileSync(scriptName + ".sh", "\n\t" + 'realurl=$(curl -ILs -o /dev/null -w %{url_effective} \'' + url + '\')');
-        fs.appendFileSync(scriptName + ".sh", "\n\t" + 'nextfilename=$(youtube-dl --get-filename -f \'bestvideo+bestaudio/best\' --merge-output-format mkv -o \'' + filename + '.%(ext)s\' "$realurl")');
-        fs.appendFileSync(scriptName + ".sh", "\n\t" + 'youtube-dl --download-archive \'' + fileDestination + 'archive.txt\' --add-metadata -f \'bestvideo+bestaudio/best\' --all-subs --embed-subs --merge-output-format mkv -o \'' + filename + '.%(ext)s\' "$realurl"');
-        fs.appendFileSync(scriptName + ".sh", ' \\' + "\n\t" + '&& test -f "$nextfilename" && mktorrent -p -a \'udp://127.0.0.1\' -w \'' + webDestination + '\'"$nextfilename" "$nextfilename"');
-        fs.appendFileSync(scriptName + ".sh", ' \\' + "\n\t" + '&& ' + copyComand + ' "./' + filename + '"* \'' + fileDestination + "\'");
-        if (!DEBUG) {
-            fs.appendFileSync(scriptName + ".sh",' \\' + "\n\t" + '&& curl -i -H "Accept: application/json" -H "Content-Type: application/json" -H "X-Api-Key: $apiKey" -X POST -d \'{"title":"\'"$nextfilename"\'","downloadUrl":"' + webDestination + '\'"$nextfilename"\'.torrent","protocol":"torrent","publishDate":"\'"$date"\'"}\' ' + (SONARR_OPTIONS.ssl ? 'https://' : 'http://') + SONARR_OPTIONS.hostname + '/api/release/push');
-        }
-        fs.appendFileSync(scriptName + ".sh","\n\t" + 'rm -f "./' + filename + "\"*");
-    
-        fs.appendFileSync(scriptName + ".sh","\n\techo '' \n");
-        fs.appendFileSync(scriptName + ".sh","\nfi \n");
+                resolve((stdout.toString() || '').trim());
+            });
+        });
     }
 
-    const self = {
+    function downloadVideo(url, filename) {
+        let downloadUrl = new Url(url);
+        https.get(url, (res) => {
+            if(res.statusCode === 301 || res.statusCode === 302) {
+                if (res.headers.location) {   
+                    if (response.headers.location.match(/^http/)) {
+                        let newUrl = new Url(response.headers.location);
+                        downloadUrl.host = newUrl.host;
+                        downloadUrl.path = newUrl.path;
+                    } else {
+                        downloadUrl.path = response.headers.location;
+                    }
+                }
+            }
+
+            if (res.statusCode >= 200 && res.statusCode < 400) {
+                getProcessedFilename(filename, downloadUrl).then((properFilename) => {
+                    if (properFilename) {
+                        let outputFile = fileDestination + properFilename;
+                        
+                        queueDownload(shellescape([
+                            'youtube-dl',
+                            '--add-metadata',
+                            '-f', (DEBUG ? DEBUG_QUALITY : 'bestvideo+bestaudio/best'),
+                            '--all-subs',
+                            '-c',
+                            '--embed-subs',
+                            '--merge-output-format', 'mkv',
+                            '-o', outputFile,
+                            downloadUrl
+                        ]), () => {
+                            fs.access(outputFile, fs.constants.R_OK, (err) => {
+                                if (!err) {
+                                    fs.unlink(outputFile + '.torrent', () => {});
+
+                                    let now = Date.now() / 1000;
+                                    fs.utimes(outputFile, now, now, (err) => {
+                                        // Don't really care if date change fails. Updating just so cron doesn't clean up too early
+                                        self.queueShell(shellescape([
+                                            'mktorrent',
+                                            '-p',
+                                            '-t', 1,
+                                            '-a', 'udp://127.0.0.1',
+                                            '-w', webDestination + properFilename,
+                                            '-o', outputFile + '.torrent',
+                                            outputFile
+                                        ]), (error) => { console.error(error)});
+                                    });
+                                }
+                            });
+                        });
+                    }
+                }).catch((error) => {console.log(error)});
+            } else {
+                console.error(url + ' ' + res.statusCode);
+            }
+        });
+    }
+
+    self = {
         youtubeDl: function (url, output, quality, resolution) {
             quality = quality || 'WEBRip';
+            let filename;
 
             if (!resolution) { // TODO: Is there a better way? Maybe within an earlier JSON feed?
                 self.queueShell(
@@ -74,26 +163,19 @@ module.exports = function (argv, scriptName) {
 
                         if (string) {
                             resolution = string.trim() + 'p';
-                            writeToScript(url, output, quality, resolution);
+                            filename = (output + '.English.' + resolution + '.' + quality).replace('(', '').replace(')', '');
+                            downloadVideo(url, filename);
                         }
                     }
                 );
             } else {
-                writeToScript(url, output, quality, resolution);
+                filename = (output + '.English.' + resolution + '.' + quality).replace('(', '').replace(')', '');
+                downloadVideo(url, filename);
             }
         },
 
-        prepareScript: function () {
-            if (newScript) {
-                fs.writeFileSync(scriptName + ".sh", '#!/bin/bash' + "\n" + 'date=$(date -u +"%Y-%m-%d %H:%M:%SZ")' + "\n" + 'apiKey=' + SONARR_OPTIONS.apiKey + "\n\n");
-                includeDelete && fs.writeFileSync(scriptName + ".sh", 'mkdir -p "' + fileDestination + "\"\n");
-                includeDelete && fs.appendFileSync(scriptName + ".sh", 'rm -f"' + fileDestination + "/*\"\n");
-            
-            } else {
-                fs.appendFileSync(scriptName + ".sh", '');
-            }
-            
-            fs.chmodSync(scriptName + ".sh", 0o765);
+        init: function () {
+           
         },
         findSonarrDetails: function (showId, episodeSlug) {
 
@@ -165,19 +247,7 @@ module.exports = function (argv, scriptName) {
             return input.trim().toLowerCase().replace(/[^a-z0-9 -]+/g, ' ').replace(/\s+/g, '-').replace(/\-+/g, '-').replace(/\~/g, '_').replace(/\_+/g, '_');
         },
 
-        queueShell: function (cmd, resultCallback) {
-            shellQueue.add(() => {
-                return new Promise((resolve, reject) => {
-                    child_process.exec(
-                        cmd,
-                        (error, stdout, stderr) => {
-                            resultCallback(error, stdout, stderr);
-                            resolve(stdout);
-                        }
-                    );
-                })
-            }).then(() => {}).catch((e) => { console.log('SHELL CATCH: ' + e)})
-        },
+        queueShell: genericShellQueue(new Queue(2, Infinity)),
 
         getFileName: function(showId, title) {
             return new Promise((resolve) => {

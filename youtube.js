@@ -43,6 +43,7 @@ if (settings && settings.shows) {
                 let items = stdout.toString().trim().split("\n");
                 stdout = null;
 
+                let youtubeId;
                 items.slice(-3).forEach((item) => {
                     if (!(item && item.trim())) {
                         return;
@@ -60,7 +61,14 @@ if (settings && settings.shows) {
                         return;
                     }
 
-                    handleDryVideoItem(show.showId, show.titleReplacements || {}, data.title, 'https://www.youtube.com/watch?v=' + data.url);
+                    // For single videos use `data.id`
+                    youtubeId = data.url || data.id
+
+                    if (youtubeId) {
+                        handleDryVideoItem(show.showId, show.titleReplacements || {}, data.title, 'https://www.youtube.com/watch?v=' + youtubeId);
+                    } else {
+                        
+                    }
                 });
             }
         );

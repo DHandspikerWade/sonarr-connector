@@ -9,8 +9,10 @@
   "author": "handspiker2",
   "license": "ISC",
   "dependencies": {
+    "lowdb": "^1.0.0",
     "minimist": "^1.2.0",
     "promise-queue": "^2.2.5",
-    "request": "^2.88.0"
+    "request": "^2.88.0",
+    "shell-escape": "^0.2.0"
   }
 }
