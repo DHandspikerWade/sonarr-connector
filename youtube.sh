@@ -18,5 +18,10 @@ find $OUTPUT* -mtime +5 -exec rm -f {} \;
 cd /tmp/ && \
 node /app/youtube.js --copy 'cp' --http "$SEED" --output "$OUTPUT"
 
-sh ./youtube.sh
-rm youtube.sh
+if [ -z "$DEBUG" ]
+then
+    sh ./youtube.sh
+    rm youtube.sh
+else
+    cp youtube.sh "$OUTPUT"
+fi

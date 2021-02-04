@@ -11,6 +11,7 @@ const SONARR_OPTIONS = {
     urlBase: ''
 };
 
+const DEBUG = process.env.DEBUG && process.env.DEBUG > 0;
 const MIN_DISK_SPACE = 10 * 1024 * 1024; // 10GB in KB
 
 let shellQueue = new Queue(2, Infinity);
@@ -23,7 +24,12 @@ module.exports = function (argv, scriptName) {
     const includeDelete = !!argv.delete;
     const newScript = !argv.append;
 
-    var sonarr = new SonarrAPI(SONARR_OPTIONS);
+    if (DEBUG) {
+        console.debug('DEBUG enabled.');
+        console.debug('Sonarr config: ' + JSON.stringify(SONARR_OPTIONS));
+    }
+
+    let sonarr = new SonarrAPI(SONARR_OPTIONS);
 
     if (!(SONARR_OPTIONS.hostname && SONARR_OPTIONS.apiKey && SONARR_OPTIONS.port)) {
         console.log('Error: Missing sonarr details');
@@ -41,7 +47,9 @@ module.exports = function (argv, scriptName) {
         fs.appendFileSync(scriptName + ".sh", "\n\t" + 'youtube-dl --download-archive \'' + fileDestination + 'archive.txt\' --add-metadata -f \'bestvideo+bestaudio/best\' --all-subs --embed-subs --merge-output-format mkv -o \'' + filename + '.%(ext)s\' "$realurl"');
         fs.appendFileSync(scriptName + ".sh", ' \\' + "\n\t" + '&& test -f "$nextfilename" && mktorrent -p -a \'udp://127.0.0.1\' -w \'' + webDestination + '\'"$nextfilename" "$nextfilename"');
         fs.appendFileSync(scriptName + ".sh", ' \\' + "\n\t" + '&& ' + copyComand + ' "./' + filename + '"* \'' + fileDestination + "\'");
-        fs.appendFileSync(scriptName + ".sh",' \\' + "\n\t" + '&& curl -i -H "Accept: application/json" -H "Content-Type: application/json" -H "X-Api-Key: $apiKey" -X POST -d \'{"title":"\'"$nextfilename"\'","downloadUrl":"' + webDestination + '\'"$nextfilename"\'.torrent","protocol":"torrent","publishDate":"\'"$date"\'"}\' ' + (SONARR_OPTIONS.ssl ? 'https://' : 'http://') + SONARR_OPTIONS.hostname + '/api/release/push');
+        if (!DEBUG) {
+            fs.appendFileSync(scriptName + ".sh",' \\' + "\n\t" + '&& curl -i -H "Accept: application/json" -H "Content-Type: application/json" -H "X-Api-Key: $apiKey" -X POST -d \'{"title":"\'"$nextfilename"\'","downloadUrl":"' + webDestination + '\'"$nextfilename"\'.torrent","protocol":"torrent","publishDate":"\'"$date"\'"}\' ' + (SONARR_OPTIONS.ssl ? 'https://' : 'http://') + SONARR_OPTIONS.hostname + '/api/release/push');
+        }
         fs.appendFileSync(scriptName + ".sh","\n\t" + 'rm -f "./' + filename + "\"*");
     
         fs.appendFileSync(scriptName + ".sh","\n\techo '' \n");
