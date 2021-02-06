@@ -1,7 +1,7 @@
 const argv = require('minimist')(process.argv.slice(2));
 const https = require('https');
 const fs = require('fs');
-const Helpers = require('./helpers')(argv, 'nhk');
+const Helpers = require('./helpers')(argv);
 
 const NHK_HOST = 'https://www3.nhk.or.jp';
 
@@ -25,7 +25,7 @@ function parseApiData(json, programSlug, showId) {
 }
 
 console.log('starting');
-Helpers.prepareScript();
+Helpers.init();
 
 let settings = fs.readFileSync(__dirname + '/nhk.json', 'UTF-8');
 settings = JSON.parse(settings);

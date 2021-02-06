@@ -2,7 +2,7 @@ const argv = require('minimist')(process.argv.slice(2));
 const https = require('https');
 const fs = require('fs');
 const child_process = require('child_process');
-const Helpers = require('./helpers')(argv, 'youtube');
+const Helpers = require('./helpers')(argv);
 
 const bannedTitles = ['[Private video]', '[Deleted video]'];
 
@@ -22,7 +22,7 @@ function handleDryVideoItem(showId, replacements, title, url) {
 }
 
 console.log('starting');
-Helpers.prepareScript();
+Helpers.init();
 
 let settings = fs.readFileSync(__dirname + '/youtube.json', 'UTF-8');
 settings = JSON.parse(settings);

@@ -38,13 +38,9 @@ function genericShellQueue(queue) {
 
 let queueDownload = genericShellQueue(new Queue(2, Infinity));
 
-module.exports = function (argv, scriptName) {
-    scriptName = scriptName || 'script';
-    const copyComand = argv.copy || 'scp';
+module.exports = function (argv) {
     const fileDestination = argv.output || '';
     const webDestination = argv.http || '';
-    const includeDelete = !!argv.delete;
-    const newScript = !argv.append;
 
     if (DEBUG) {
         console.debug('DEBUG enabled.');
