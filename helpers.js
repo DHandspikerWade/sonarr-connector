@@ -1,5 +1,6 @@
 const SonarrAPI = require('./sonarr');
 const fs = require('fs');
+const diskusage = require('diskusage-ng');
 const https = require('https');
 const Url = require('url').URL
 const child_process = require('child_process');
@@ -17,13 +18,13 @@ const SONARR_OPTIONS = {
 
 const DEBUG = process.env.DEBUG && process.env.DEBUG > 0;
 const DEBUG_QUALITY = 'worstvideo+worstaudio/worst';
-const MIN_DISK_SPACE = 10 * 1024 * 1024; // 10GB in KB
+const MIN_DISK_SPACE = 10 * 1024 * 1024 * 1024; // 10GB in bytes
 
 function genericShellQueue(queue) {
     return function (cmd, resultCallback) {
         queue.add(() => {
             return new Promise((resolve, reject) => {
-                console.debug(cmd);
+                if (DEBUG) console.debug(cmd);
                 child_process.exec(
                     cmd,
                     (error, stdout, stderr) => {
@@ -36,8 +37,7 @@ function genericShellQueue(queue) {
     };
 }
 
-let queueDownload = genericShellQueue(new Queue(2, Infinity));
-
+const downloadQueue = new Queue(2, Infinity); 
 module.exports = function (argv) {
     const fileDestination = argv.output || '';
     const webDestination = argv.http || '';
@@ -56,6 +56,29 @@ module.exports = function (argv) {
 
     // Cache sonarr requests
     let episodeList = {};
+
+    function queueDownload(cmd, resultCallback) {
+        downloadQueue.add(() => {
+            return new Promise((resolve, reject) => {
+                diskusage(fileDestination, function(err, usage) {
+                    if (err) return console.log(err);
+                    if (DEBUG) console.debug(cmd);
+
+                    if (usage.available > MIN_DISK_SPACE) {
+                        child_process.exec(
+                            cmd,
+                            (error, stdout, stderr) => {
+                                resultCallback(error, stdout, stderr);
+                                resolve(stdout);
+                            }
+                        );
+                    } else {
+                        if (DEBUG) console.debug('Disk limit reached.');
+                    }
+                });
+            })
+        }).then(() => {}).catch((e) => { console.log('SHELL CATCH: ' + e)})
+    }
 
     function getProcessedFilename(filename, url) {
         return new Promise((resolve) => {
@@ -101,6 +124,7 @@ module.exports = function (argv) {
                     if (properFilename) {
                         let outputFile = fileDestination + properFilename;
                         
+                        
                         queueDownload(shellescape([
                             'youtube-dl',
                             '--add-metadata',
@@ -127,7 +151,14 @@ module.exports = function (argv) {
                                             '-w', webDestination + properFilename,
                                             '-o', outputFile + '.torrent',
                                             outputFile
-                                        ]), (error) => { console.error(error)});
+                                        ]), (error) => { 
+                                            if (error) {
+                                                console.error(error);
+                                                return
+                                            }
+
+                                            // Notify Sonarr
+                                        });
                                     });
                                 }
                             });
@@ -206,7 +237,7 @@ module.exports = function (argv) {
                                     episode: item.episodeNumber
                                 };
                                 
-                                // TODO: Different seasons may have create duplicate slugs
+                                // TODO: Different seasons may have create duplicate slugs. Example show "Great Canadian Baking"
                                 episodes[compareSlug] = episode;
                             }
                         }

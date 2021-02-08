@@ -66,8 +66,6 @@ if (settings && settings.shows) {
 
                     if (youtubeId) {
                         handleDryVideoItem(show.showId, show.titleReplacements || {}, data.title, 'https://www.youtube.com/watch?v=' + youtubeId);
-                    } else {
-                        
                     }
                 });
             }
