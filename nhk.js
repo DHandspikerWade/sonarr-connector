@@ -17,6 +17,15 @@ function handleVideoData(data, programSlug, showId) {
 
 function parseApiData(json, programSlug, showId) {
     if (json.data && json.data.episodes && json.data.episodes.length) {
+        json.data.episodes.sort(function(a, b) {
+            if (a.vod_to > b.vod_to) {
+                return -1;
+            } else if (a.vod_to < b.vod_to) {
+                return 1;
+            }
+            return 0;
+        });
+
         let i;
         for (i = 0; i < json.data.episodes.length; i++) {
             handleVideoData(json.data.episodes[i], programSlug, showId);
