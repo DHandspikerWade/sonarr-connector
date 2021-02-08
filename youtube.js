@@ -6,7 +6,11 @@ const Helpers = require('./helpers')(argv);
 
 const bannedTitles = ['[Private video]', '[Deleted video]'];
 
-function handleDryVideoItem(showId, replacements, title, url) {
+function makeId(youtubeId) {
+    return 'youtube_' + youtubeId;
+}
+
+function handleDryVideoItem(showId, replacements, title, watchId) {
     let newTitle = title;
 
     for (const [regexStr, replacement] of Object.entries(replacements)) {
@@ -16,7 +20,7 @@ function handleDryVideoItem(showId, replacements, title, url) {
 
     Helpers.getFileName(showId, newTitle).then((newfile) => {
         if (newfile) {
-            Helpers.youtubeDl(url, newfile, 'WEB-DL');
+            Helpers.youtubeDl(makeId(watchId), 'https://www.youtube.com/watch?v=' + watchId, newfile, 'WEB-DL');
         }
     });
 }
@@ -27,9 +31,14 @@ Helpers.init();
 let settings = fs.readFileSync(__dirname + '/youtube.json', 'UTF-8');
 settings = JSON.parse(settings);
 
+let limit = 20;
 if (settings && settings.shows) {
-    settings.shows.forEach((show) => {
-        child_process.exec(
+    settings.shows.forEach(async (show) => {
+        if (limit < 1) {
+            return false;
+        }
+
+        await child_process.exec(
             // Trusting the playlist to not contain single quotes. Dangerous!
             'youtube-dl --no-warnings --no-progress --no-color --flat-playlist --ignore-errors --dump-json \'' + show.youtubePlaylist + '\'',
             // 8MB buffer that should never be hit. If reached, abandon hope. Testing with PLpR68gbIfkKnP7m8D04V40al1t8rAxDT0 (5000 item list) resulted in 1.2MB
@@ -44,7 +53,11 @@ if (settings && settings.shows) {
                 stdout = null;
 
                 let youtubeId;
-                items.slice(-3).forEach((item) => {
+                items.forEach((item) => {
+                    if (limit < 1) {
+                        return false;
+                    }
+
                     if (!(item && item.trim())) {
                         return;
                     }
@@ -62,10 +75,13 @@ if (settings && settings.shows) {
                     }
 
                     // For single videos use `data.id`
-                    youtubeId = data.url || data.id
+                    youtubeId = data.url || data.id;
 
                     if (youtubeId) {
-                        handleDryVideoItem(show.showId, show.titleReplacements || {}, data.title, 'https://www.youtube.com/watch?v=' + youtubeId);
+                        if (!Helpers.getHistory(makeId(youtubeId))) {
+                            handleDryVideoItem(show.showId, show.titleReplacements || {}, data.title, youtubeId);
+                            limit--;
+                        }
                     }
                 });
             }

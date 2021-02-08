@@ -8,13 +8,6 @@ then
     echo '{}' > /app/youtube.json
 fi
 
-mkdir -p $OUTPUT
-
-. $HOME/.bashrc
-
-touch ${OUTPUT}archive.txt
 find $OUTPUT* -mtime +5 -exec rm -f {} \;
-
-cd /tmp/ && \
 node /app/youtube.js --copy 'cp' --http "$SEED" --output "$OUTPUT"
 

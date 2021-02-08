@@ -8,13 +8,5 @@ then
     echo '{}' > /app/nhk.json
 fi
 
-mkdir -p $OUTPUT
-
-. $HOME/.bashrc
-
-touch ${OUTPUT}archive.txt
 find $OUTPUT* -mtime +5 -exec rm -f {} \;
-
-#cd /tmp/ && npm ci --quiet > /dev/null && \
-cd /tmp/ && \
 node /app/nhk.js --copy 'cp' --http "$SEED" --output "$OUTPUT"
