@@ -168,7 +168,7 @@ module.exports = function (argv) {
                                                     return
                                                 }
 
-                                                downloaded(true);
+                                                downloaded(properFilename + '.torrent');
                                             });
                                         });
                                     }
@@ -220,6 +220,43 @@ module.exports = function (argv) {
             quality = quality || 'WEBRip';
             let filename;
 
+            const afterDownload = (torrentFile) => {
+                if (torrentFile) {
+                    self.setHistory(id, url, resolution, output)
+
+                    if (!DEBUG) {
+                        let req = https.request((SONARR_OPTIONS.ssl ? 'https://' : 'http://') + SONARR_OPTIONS.hostname + '/api/release/push', {
+                            method: 'POST',    
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Api-Key': SONARR_OPTIONS.apiKey
+                            }
+                        }, (resp) => {
+                            let data = '';
+                            resp.on('data', (chunk) => {
+                                data += chunk;
+                            });
+                            
+                            resp.on('end', () => {
+                                console.log('Sent ' + filename);
+                                console.log('got: ' + data);
+                            });
+                        }).on("error", (err) => {
+                            console.log("Error: " + err.message);
+                        });
+
+                        req.write(JSON.stringify({
+                            title: filename,
+                            downloadUrl: webDestination + encodeURIComponent(torrentFile),
+                            protocol:"torrent",
+                            publishDate: (new Date()).toISOString()
+                        }));
+
+                        req.end();
+                    }
+                }
+            };
+
             if (!resolution) { // TODO: Is there a better way? Maybe within an earlier JSON feed?
                 self.queueShell(
                     // Ask youtube-dl what resolution it's going to download
@@ -235,17 +272,13 @@ module.exports = function (argv) {
                         if (string) {
                             resolution = string.trim() + 'p';
                             filename = (output + '.English.' + resolution + '.' + quality).replace('(', '').replace(')', '');
-                            downloadVideo(url, filename).then((isDownloaded) => {
-                                if (isDownloaded) {
-                                    self.setHistory(id, url, resolution, output)
-                                }
-                            });
+                            downloadVideo(url, filename).then(afterDownload);
                         }
                     }
                 );
             } else {
                 filename = (output + '.English.' + resolution + '.' + quality).replace('(', '').replace(')', '');
-                downloadVideo(url, filename);
+                downloadVideo(url, filename).then(afterDownload);
             }
         },
 
