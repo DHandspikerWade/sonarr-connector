@@ -36,6 +36,10 @@ build_downloader:
     script:
         - docker version
         - docker pull nginx:stable
+        - echo '{}' > nhk.json
+        - echo '{}' > youtube.json
+        - cat "${NHK_JSON:-nhk.json}" > nhk.json
+        - cat "${YOUTUBE_JSON:-youtube.json}" > youtube.json
         - docker build --build-arg BUILD_DATE="$(date -I)" -t nhk-download .
         - docker save nhk-download > nhk-download.image
     only:
