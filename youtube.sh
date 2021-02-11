@@ -8,6 +8,6 @@ then
     echo '{}' > /app/youtube.json
 fi
 
-find $OUTPUT* -mtime +5 -exec rm -f {} \;
+find $OUTPUT* -mtime +5 -not -name "*.json" -exec rm -f {} \;
 node /app/youtube.js --copy 'cp' --http "$SEED" --output "$OUTPUT"
 

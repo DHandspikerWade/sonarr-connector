@@ -8,5 +8,5 @@ then
     echo '{}' > /app/nhk.json
 fi
 
-find $OUTPUT* -mtime +5 -exec rm -f {} \;
+find $OUTPUT* -mtime +5 -not -name "*.json" -exec rm -f {} \;
 node /app/nhk.js --copy 'cp' --http "$SEED" --output "$OUTPUT"
