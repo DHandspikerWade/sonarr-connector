@@ -36,10 +36,6 @@ build_downloader:
     script:
         - docker version
         - docker pull nginx:stable
-        - echo '{}' > nhk.json
-        - echo '{}' > youtube.json
-        - cat "${NHK_JSON:-nhk.json}" > nhk.json
-        - cat "${YOUTUBE_JSON:-youtube.json}" > youtube.json
         - docker build --build-arg BUILD_DATE="$(date -I)" -t nhk-download .
         - docker save nhk-download > nhk-download.image
     only:
@@ -68,9 +64,17 @@ deploy:
                     echo '{}' > /apps/nhk/history.json
                 fi
 
+                if [ ! -f /apps/nhk/nhk.json ]; then
+                    echo '{}' > /apps/nhk/nhk.json
+                fi
+
+                if [ ! -f /apps/nhk/youtube.json ]; then
+                    echo '{}' > /apps/nhk/youtube.json
+                fi
+
                 cat /tmp/nhk-download.image | docker load
                 ( docker stop nhk && docker rm nhk ) || true
-                docker run -td --restart unless-stopped --name nhk --network proxy -v /apps/nhk/history.json:/config/history.json -v /apps/nhk:/usr/share/nginx/html/sonarr -e SONARR_HOST=$SONARR_HOST  -e SONARR_KEY=${SONARR_KEY} -e SEED_HOST=${SEED_HOST} -l traefik.frontend.entryPoints=https -l traefik.enable=true -l traefik.frontend.rule="Host:${SEED_HOST};PathPrefix:/sonarr" -l traefik.docker.network=proxy nhk-download 
+                docker run -td --restart unless-stopped --name nhk --network proxy -v /apps/nhk/youtube.json:/app/youtube.json -v /apps/nhk/nhk.json:/app/nhk.json -v /apps/nhk/history.json:/config/history.json -v /apps/nhk:/usr/share/nginx/html/sonarr -e SONARR_HOST=$SONARR_HOST  -e SONARR_KEY=${SONARR_KEY} -e SEED_HOST=${SEED_HOST} -l traefik.frontend.entryPoints=https -l traefik.enable=true -l traefik.frontend.rule="Host:${SEED_HOST};PathPrefix:/sonarr" -l traefik.docker.network=proxy nhk-download 
                 
                 cat /tmp/nhk-feed.image | docker load
                 ( docker stop nhk-feed && docker rm nhk-feed ) || true
