@@ -39,6 +39,7 @@ function genericShellQueue(queue) {
 }
 
 const downloadQueue = new Queue(2, Infinity); 
+let last_disk_availible = -1;
 
 let historyDb = require('lowdb')(new FileSync('/config/history.json'));
 module.exports = function (argv) {
@@ -70,6 +71,7 @@ module.exports = function (argv) {
                     if (DEBUG) console.debug(cmd);
 
                     if (usage.available > MIN_DISK_SPACE) {
+                        last_disk_availible = usage.available;
                         child_process.exec(
                             cmd,
                             (error, stdout, stderr) => {
@@ -111,6 +113,10 @@ module.exports = function (argv) {
     }
 
     function downloadVideo(url, filename) {
+        if (last_disk_availible >= 0 && last_disk_availible < MIN_DISK_SPACE) {
+            // Don't brother. Disk is already full
+            return Promise.resolve(false);
+        }
         return new Promise((downloaded) => {
             let downloadUrl = new Url(url);
             https.get(url, (res) => {
