@@ -39,6 +39,7 @@ function genericShellQueue(queue) {
 }
 
 const downloadQueue = new Queue(2, Infinity); 
+
 let historyDb = require('lowdb')(new FileSync('/config/history.json'));
 module.exports = function (argv) {
     const fileDestination = argv.output || '';
@@ -291,6 +292,20 @@ module.exports = function (argv) {
             }
 
         },
+        filteredSonarrFind: function(showId, episodeSlug, filter) {
+            return new Promise((resolve) => {
+                self.findSonarrDetails(showId, '').then((x) => {
+                    if (!episodeSlug) {
+                        resolve(filter(episodeList[showId].values()));
+                    } else if (typeof filter === 'function') {
+                        resolve(filter(episodeSlug in episodeList[showId] ? episodeList[showId][episodeSlug] : []));
+                    } else {
+                        resolve(false);
+                    }
+                })
+            });
+        },
+
         findSonarrDetails: function (showId, episodeSlug) {
 
             if (!(showId in episodeList)) {
@@ -324,8 +339,12 @@ module.exports = function (argv) {
                                     episode: item.episodeNumber
                                 };
                                 
-                                // TODO: Different seasons may have create duplicate slugs. Example show "Great Canadian Baking"
-                                episodes[compareSlug] = episode;
+                                if (!(compareSlug in episodes)) {
+                                    episodes[compareSlug] = [];
+                                }
+
+                                //Different seasons may have create duplicate slugs. Example show "Great Canadian Baking"
+                                episodes[compareSlug].push(episode);
                             }
                         }
     
@@ -345,9 +364,13 @@ module.exports = function (argv) {
                 let loopId = setInterval(() => {
                     if (showId in episodeList && episodeList[showId]) {
                         clearInterval(loopId);
-    
+
                         if (episodeSlug in episodeList[showId]) {
-                            resolve(episodeList[showId][episodeSlug])
+                            if (episodeList[showId][episodeSlug] && episodeList[showId][episodeSlug].length === 1) {
+                                resolve(episodeList[showId][episodeSlug][0]);
+                            } else {
+                                resolve(false);
+                            }
                         } else {
                             resolve(false);
                         }
@@ -363,9 +386,18 @@ module.exports = function (argv) {
 
         queueShell: genericShellQueue(new Queue(2, Infinity)),
 
-        getFileName: function(showId, title) {
+        getFileName: function(showId, title, filter) {
             return new Promise((resolve) => {
-                self.findSonarrDetails(showId, self.toCompareSlug(title)).catch((reason) => {
+                let compareSlug = self.toCompareSlug(title);
+                let detailPromise;
+
+                if (filter && typeof filter === 'function') {
+                    detailPromise = self.filteredSonarrFind(showId, compareSlug, filter);
+                } else {
+                    detailPromise = self.findSonarrDetails(showId, compareSlug);
+                }
+
+                detailPromise.catch((reason) => {
                     console.log('failed');
                     console.log(reason)
                 }).then((episode) => {

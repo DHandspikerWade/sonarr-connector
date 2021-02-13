@@ -10,15 +10,36 @@ function makeId(youtubeId) {
     return 'youtube_' + youtubeId;
 }
 
-function handleDryVideoItem(showId, replacements, title, watchId) {
+function handleDryVideoItem(show, title, watchId) {
     let newTitle = title;
+    
 
-    for (const [regexStr, replacement] of Object.entries(replacements)) {
+    for (const [regexStr, replacement] of Object.entries(show.titleReplacements || {})) {
         // TODO: Is there a good way to reuse the RegExp obj?
         newTitle = newTitle.replace(new RegExp(regexStr, 'g'), replacement);
     }
 
-    Helpers.getFileName(showId, newTitle).then((newfile) => {
+    Helpers.getFileName(show.showId, newTitle, (episodes) => {
+        if (episodes.length === 1) {
+            return episodes[0];
+        }
+
+        let i;
+        for (const [regexStr, replacementData] of Object.entries(show.matchReplacements || {})) {
+            // TODO: Is there a good way to reuse the RegExp obj?
+            if (title.match(new RegExp(regexStr, 'g'))) {
+                episodes = episodes.filter((episode) => {
+                    return (episode.season == replacementData.season || episode.season == 0);
+                });
+            }
+        }
+
+        if (episodes.length === 1) {
+            return episodes[0];
+        }
+
+        return false;
+    }).then((newfile) => {
         if (newfile) {
             Helpers.youtubeDl(makeId(watchId), 'https://www.youtube.com/watch?v=' + watchId, newfile, 'WEB-DL');
         }
@@ -79,7 +100,7 @@ if (settings && settings.shows) {
 
                     if (youtubeId) {
                         if (!Helpers.getHistory(makeId(youtubeId))) {
-                            handleDryVideoItem(show.showId, show.titleReplacements || {}, data.title, youtubeId);
+                            handleDryVideoItem(show, data.title, youtubeId);
                             limit--;
                         }
                     }
