@@ -66,9 +66,9 @@ if (settings && settings.shows) {
         // Download expiring vods first
         episodes.sort(function(a, b) {
             if (a.data.vod_to > b.data.vod_to) {
-                return -1;
-            } else if (a.data.vod_to < b.data.vod_to) {
                 return 1;
+            } else if (a.data.vod_to < b.data.vod_to) {
+                return -1;
             }
             return 0;
         });
