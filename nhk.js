@@ -9,9 +9,16 @@ function makeId(data) {
     return 'nhk_' + data.vod_id;
 }
 
-function handleVideoData(data, programSlug, showId) {
+function handleVideoData(data, programSlug, showId, show) {
     if (data.program_slag === programSlug || data.pgm_gr_id === programSlug) {
-        Helpers.getFileName(showId, data.sub_title_clean || data.subtitle).then((newfile) => {
+        let newTitle = data.sub_title_clean || data.subtitle;
+        // Bring into the helpers?
+        for (const [regexStr, replacement] of Object.entries(show.titleReplacements || {})) {
+            // TODO: Is there a good way to reuse the RegExp obj?
+            newTitle = newTitle.replace(new RegExp(regexStr, 'g'), replacement);
+        }
+
+        Helpers.getFileName(showId, newTitle).then((newfile) => {
             if (newfile) {
                 Helpers.youtubeDl(makeId(data), NHK_HOST + (data.vod_url || data.url), newfile, 'WEB-DL');
             }
@@ -73,12 +80,14 @@ if (settings && settings.shows) {
             }
 
             if (!Helpers.getHistory(makeId(element.data))) {
-                handleVideoData(element.data, element.show.nhkSlug, element.show.showId);
+                handleVideoData(element.data, element.show.nhkSlug, element.show.showId, element.show);
                 limit--;
             }
         });
     }).catch(() => {
+    }).catch((e) => {
         console.log('Unknown error');
+        console.error(e);
         process.exit(1)
     })
 }
