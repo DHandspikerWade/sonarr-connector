@@ -14,6 +14,7 @@ function handleDryVideoItem(show, title, watchId) {
     let newTitle = title;
     
 
+    // Bring into the helpers?
     for (const [regexStr, replacement] of Object.entries(show.titleReplacements || {})) {
         // TODO: Is there a good way to reuse the RegExp obj?
         newTitle = newTitle.replace(new RegExp(regexStr, 'g'), replacement);

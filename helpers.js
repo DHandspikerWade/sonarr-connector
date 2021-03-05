@@ -166,6 +166,7 @@ module.exports = function (argv) {
                                                 'mktorrent',
                                                 '-p',
                                                 '-t', 1,
+                                                '-c', 'Made with Sonarr Archiver',
                                                 '-a', 'udp://127.0.0.1',
                                                 '-w', webDestination + properFilename,
                                                 '-o', outputFile + '.torrent',
