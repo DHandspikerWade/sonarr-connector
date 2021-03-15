@@ -84,7 +84,7 @@ if (settings && settings.shows) {
 
             if (limit > 0) {
                 if (!downloadHistory) {
-                    // handleVideoData(element.data, element.show.nhkSlug, element.show.showId, element.show);
+                    handleVideoData(element.data, element.show.nhkSlug, element.show.showId, element.show);
                     limit--;
                 }
             } 

@@ -232,7 +232,6 @@ module.exports = function (argv) {
             let items =  historyDb.get('downloaded').filter({'id': id}).value();
             if (items.length > 0) {
                 historyDb.get('downloaded').find({'id': id}).assign(fields).write();
-                console.debug('Updated ' + items.length + ' items');
                 return items.length;
             }
 
