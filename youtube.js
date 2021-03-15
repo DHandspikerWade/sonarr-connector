@@ -13,7 +13,6 @@ function makeId(youtubeId) {
 function handleDryVideoItem(show, title, watchId) {
     let newTitle = title;
     
-
     // Bring into the helpers?
     for (const [regexStr, replacement] of Object.entries(show.titleReplacements || {})) {
         // TODO: Is there a good way to reuse the RegExp obj?
@@ -100,9 +99,17 @@ if (settings && settings.shows) {
                     youtubeId = data.url || data.id;
 
                     if (youtubeId) {
-                        if (!Helpers.getHistory(makeId(youtubeId))) {
+                        let videoId = makeId(youtubeId);
+                        let downloadHistory = Helpers.getHistory(videoId);
+
+                        if (!downloadHistory) {
                             handleDryVideoItem(show, data.title, youtubeId);
                             limit--;
+                        }
+
+                        // Dirty hack to add names on next run...SHAMEFUL and basically it's own bug
+                        if (downloadHistory && !downloadHistory.originalTitle) {
+                            Helpers.updateHistory(videoId, {'originalTitle': data.title});
                         }
                     }
                 });

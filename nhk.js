@@ -9,6 +9,10 @@ function makeId(data) {
     return 'nhk_' + data.vod_id;
 }
 
+function getVodURL(data) {
+    return NHK_HOST + (data.vod_url || data.url);
+}
+
 function handleVideoData(data, programSlug, showId, show) {
     if (data.program_slag === programSlug || data.pgm_gr_id === programSlug) {
         let newTitle = data.sub_title_clean || data.subtitle;
@@ -20,7 +24,7 @@ function handleVideoData(data, programSlug, showId, show) {
 
         Helpers.getFileName(showId, newTitle).then((newfile) => {
             if (newfile) {
-                Helpers.youtubeDl(makeId(data), NHK_HOST + (data.vod_url || data.url), newfile, 'WEB-DL');
+                Helpers.youtubeDl(makeId(data), getVodURL(data), newfile, 'WEB-DL');
             }
         });
     }
@@ -75,16 +79,21 @@ if (settings && settings.shows) {
 
         let limit = 10;
         episodes.forEach(element => {
-            if (limit < 1) {
-                return false;
-            }
+            let videoId = makeId(element.data);
+            let downloadHistory = Helpers.getHistory(videoId);
 
-            if (!Helpers.getHistory(makeId(element.data))) {
-                handleVideoData(element.data, element.show.nhkSlug, element.show.showId, element.show);
-                limit--;
+            if (limit > 0) {
+                if (!downloadHistory) {
+                    // handleVideoData(element.data, element.show.nhkSlug, element.show.showId, element.show);
+                    limit--;
+                }
+            } 
+
+            // Dirty hack to add names on next run...SHAMEFUL and basically it's own bug
+            if (downloadHistory && !downloadHistory.originalTitle) {
+                Helpers.updateHistory(videoId, {'originalTitle': element.data.sub_title_clean || element.data.subtitle});
             }
         });
-    }).catch(() => {
     }).catch((e) => {
         console.log('Unknown error');
         console.error(e);

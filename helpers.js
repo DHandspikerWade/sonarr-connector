@@ -117,6 +117,7 @@ module.exports = function (argv) {
             // Don't brother. Disk is already full
             return Promise.resolve(false);
         }
+
         return new Promise((downloaded) => {
             let downloadUrl = new Url(url);
             https.get(url, (res) => {
@@ -208,9 +209,9 @@ module.exports = function (argv) {
             return null;
             
         },
-        setHistory: function(id, url, resolution, filename) {
+        addHistory: function(id, url, resolution, filename) {
             if (historyDb.get('downloaded').filter({'id': id}).value().length < 1) {
-                historyDb.get('downloaded').push({
+                historyDb.defaults({ downloaded: [] }).get('downloaded').push({
                     id: id, 
                     url: url, 
                     resolution: resolution, 
@@ -218,13 +219,24 @@ module.exports = function (argv) {
                     filename: filename
                  }).write();
             } else {
-                historyDb.get('downloaded').filter({'id': id}).assign({
+                self.updateHistory(id, {
                     url: url, 
                     resolution: resolution, 
                     downloadTime: Date.now() / 1000,
                     filename: filename
-                 }).write();
+                 });
             }
+        },
+        // TODO: History management should REALLY be it's own thing
+        updateHistory: function(id, fields) {
+            let items =  historyDb.get('downloaded').filter({'id': id}).value();
+            if (items.length > 0) {
+                historyDb.get('downloaded').find({'id': id}).assign(fields).write();
+                console.debug('Updated ' + items.length + ' items');
+                return items.length;
+            }
+
+            return 0;
         },
         youtubeDl: function (id, url, output, quality, resolution) {
             quality = quality || 'WEBRip';
@@ -232,7 +244,7 @@ module.exports = function (argv) {
 
             const afterDownload = (torrentFile) => {
                 if (torrentFile) {
-                    self.setHistory(id, url, resolution, output)
+                    self.addHistory(id, url, resolution, filename)
 
                     if (!DEBUG) {
                         let req = https.request((SONARR_OPTIONS.ssl ? 'https://' : 'http://') + SONARR_OPTIONS.hostname + '/api/release/push', {
@@ -248,8 +260,9 @@ module.exports = function (argv) {
                             });
                             
                             resp.on('end', () => {
-                                console.log('Sent ' + filename);
-                                console.log('got: ' + data);
+                                console.log(data);
+                                // Sonarr pretty prints by default. No need to store whitespace
+                                self.updateHistory(id, {'sonarr_response': JSON.stringify(JSON.parse(data))});
                             });
                         }).on("error", (err) => {
                             console.log("Error: " + err.message);
@@ -263,6 +276,8 @@ module.exports = function (argv) {
                         }));
 
                         req.end();
+                    } else {
+                        self.updateHistory(id, {'sonarr_response': 'DEBUG_MODE'});
                     }
                 }
             };
