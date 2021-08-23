@@ -91,7 +91,7 @@ module.exports = function (argv) {
     function getProcessedFilename(filename, url) {
         return new Promise((resolve) => {
             self.queueShell(shellescape([
-                'youtube-dl', 
+                'yt-dlp', 
                 '--no-warnings', 
                 '--no-progress', 
                 '--no-color',
@@ -141,7 +141,7 @@ module.exports = function (argv) {
                             
                             
                             queueDownload(shellescape([
-                                'youtube-dl',
+                                'yt-dlp',
                                 '--add-metadata',
                                 '-f', (DEBUG ? DEBUG_QUALITY : EXPECTED_QUALITY),
                                 '--all-subs',
@@ -285,7 +285,7 @@ module.exports = function (argv) {
             if (!resolution) { // TODO: Is there a better way? Maybe within an earlier JSON feed?
                 self.queueShell(
                     // Ask youtube-dl what resolution it's going to download
-                    'youtube-dl --no-warnings --no-progress --no-color --youtube-skip-dash-manifest --ignore-errors -f \'' + EXPECTED_QUALITY + '\' --get-filename -o \'%(height)s\' \'' + url + '\'',
+                    'yt-dlp --no-warnings --no-progress --no-color --youtube-skip-dash-manifest --ignore-errors -f \'' + EXPECTED_QUALITY + '\' --get-filename -o \'%(height)s\' \'' + url + '\'',
                     (error, stdout, stderr) => {
                         if (error) {
                             console.error(`exec error: ${error}`);
