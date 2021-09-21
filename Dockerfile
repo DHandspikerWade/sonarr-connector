@@ -20,8 +20,12 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends mktorrent cr
     && rm -rf /usr/share/doc/* \
     && rm -rf /usr/share/man/*
 
+# Debian no longer has a `python` command but youtube-dl still uses it
+RUN ln -s /usr/bin/python3 /usr/local/bin/python
+
 RUN curl -L https://yt-dl.org/downloads/latest/youtube-dl -o /usr/bin/youtube-dl && \
-    chmod a+rx /usr/bin/youtube-dl 
+    chmod a+rx /usr/bin/youtube-dl && \
+    youtube-dl --version
     
 COPY package*.json /app/
 RUN cd /app/ && npm ci
