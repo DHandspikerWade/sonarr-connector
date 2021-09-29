@@ -19,6 +19,7 @@ const SONARR_OPTIONS = {
 
 const DEBUG = process.env.DEBUG && process.env.DEBUG > 0;
 const DEBUG_QUALITY = 'worstvideo+worstaudio/worst';
+const EXPECTED_QUALITY = 'bestvideo[height<=1080]+bestaudio/best[height<=1080]'
 const MIN_DISK_SPACE = 10 * 1024 * 1024 * 1024; // 10GB in bytes
 
 function genericShellQueue(queue) {
@@ -97,7 +98,7 @@ module.exports = function (argv) {
                 '--ignore-errors', 
                 '--youtube-skip-dash-manifest',
                 '--get-filename', 
-                '-f', (DEBUG ? DEBUG_QUALITY : 'bestvideo+bestaudio/best'), 
+                '-f', (DEBUG ? DEBUG_QUALITY : EXPECTED_QUALITY), 
                 '--merge-output-format', 'mkv', 
                 '-o', filename + '.%(ext)s', 
                 url
@@ -142,7 +143,7 @@ module.exports = function (argv) {
                             queueDownload(shellescape([
                                 'youtube-dl',
                                 '--add-metadata',
-                                '-f', (DEBUG ? DEBUG_QUALITY : 'bestvideo+bestaudio/best'),
+                                '-f', (DEBUG ? DEBUG_QUALITY : EXPECTED_QUALITY),
                                 '--all-subs',
                                 '-c',
                                 '--embed-subs',
@@ -284,7 +285,7 @@ module.exports = function (argv) {
             if (!resolution) { // TODO: Is there a better way? Maybe within an earlier JSON feed?
                 self.queueShell(
                     // Ask youtube-dl what resolution it's going to download
-                    'youtube-dl --no-warnings --no-progress --no-color --youtube-skip-dash-manifest --ignore-errors -f \'bestvideo+bestaudio/best\' --get-filename -o \'%(height)s\' \'' + url + '\'',
+                    'youtube-dl --no-warnings --no-progress --no-color --youtube-skip-dash-manifest --ignore-errors -f \'' + EXPECTED_QUALITY + '\' --get-filename -o \'%(height)s\' \'' + url + '\'',
                     (error, stdout, stderr) => {
                         if (error) {
                             console.error(`exec error: ${error}`);

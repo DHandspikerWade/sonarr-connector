@@ -61,7 +61,7 @@ if (settings && settings.shows) {
 
         await child_process.exec(
             // Trusting the playlist to not contain single quotes. Dangerous!
-            'youtube-dl --no-warnings --no-progress --no-color --flat-playlist --ignore-errors --dump-json \'' + show.youtubePlaylist + '\'',
+            'youtube-dl --no-warnings --no-progress --no-color --flat-playlist --playlist-random --ignore-errors --dump-json \'' + show.youtubePlaylist + '\'',
             // 8MB buffer that should never be hit. If reached, abandon hope. Testing with PLpR68gbIfkKnP7m8D04V40al1t8rAxDT0 (5000 item list) resulted in 1.2MB
             {maxBuffer: 1024 * 1024 * 8},
             (error, stdout, stderr) => {
