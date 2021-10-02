@@ -99,8 +99,7 @@ if (settings && settings.shows) {
                 let videoData = {
                     show, 
                     title: data.title,
-                    // For single videos use `data.id`
-                    youtubeId: data.url || data.id
+                    youtubeId: data.id
                 };
 
                 videos.push(videoData);
