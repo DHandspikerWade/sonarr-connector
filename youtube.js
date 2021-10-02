@@ -123,7 +123,7 @@ if (settings && settings.shows) {
             let videoId = makeId(data.youtubeId);
             let downloadHistory = Helpers.getHistory(videoId);
 
-            if (!downloadHistory) {
+            if (!downloadHistory && limit > 0) {
                 handleDryVideoItem(data.show, data.title, data.youtubeId);
                 limit--;
             }

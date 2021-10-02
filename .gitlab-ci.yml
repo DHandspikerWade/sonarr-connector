@@ -80,6 +80,8 @@ deploy:
                 # ( docker stop nhk-feed && docker rm nhk-feed ) || true
                 # docker run -td --restart unless-stopped --name nhk-feed --network proxy -v /apps/nhk:/data -l traefik.frontend.entryPoints=https -l traefik.enable=true -l traefik.frontend.rule="Host:${SEED_HOST};Path:/create_feed.php" -l traefik.docker.network=proxy nhk-feed
                 
+                docker exec nhk echo hello
+
                 docker image prune -f
             EOF
     only:
