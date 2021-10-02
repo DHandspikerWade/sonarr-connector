@@ -432,7 +432,18 @@ module.exports = function (argv) {
                     }
                 }).catch(() => resolve(''));
             });
-        }
+        },
+        // Stolen from https://medium.com/@oldwestaction/randomness-is-hard-e085decbcbb2
+        shuffleArray: (deck) => {
+            for (var i = deck.length - 1; i > 0; i--) {
+              const swapIndex = Math.floor(Math.random() * (i + 1))
+              const currentCard = deck[i]
+              const cardToSwap = deck[swapIndex]
+              deck[i] = cardToSwap
+              deck[swapIndex] = currentCard
+            }
+            return deck
+          }
     };
 
     return self;

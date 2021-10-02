@@ -2,6 +2,7 @@ const argv = require('minimist')(process.argv.slice(2));
 const https = require('https');
 const fs = require('fs');
 const child_process = require('child_process');
+const util = require('util');
 const Helpers = require('./helpers')(argv);
 
 const bannedTitles = ['[Private video]', '[Deleted video]'];
@@ -52,68 +53,91 @@ Helpers.init();
 let settings = fs.readFileSync(__dirname + '/youtube.json', 'UTF-8');
 settings = JSON.parse(settings);
 
+const promisingExec = util.promisify(child_process.exec);
+
 let limit = 20;
 if (settings && settings.shows) {
-    settings.shows.forEach(async (show) => {
+    let videos = [];
+    let promises = [];
+    let currentShowPromise = null;
+    settings.shows.forEach((show) => {
         if (limit < 1) {
             return false;
         }
 
-        await child_process.exec(
-            // Trusting the playlist to not contain single quotes. Dangerous!
-            'youtube-dl --no-warnings --no-progress --no-color --flat-playlist --playlist-random --ignore-errors --dump-json \'' + show.youtubePlaylist + '\'',
+        currentShowPromise = promisingExec(
+             // Trusting the playlist to not contain single quotes. Dangerous!
+            'youtube-dl --no-warnings --no-progress --no-color --flat-playlist --ignore-errors --dump-json \'' + show.youtubePlaylist + '\'',
             // 8MB buffer that should never be hit. If reached, abandon hope. Testing with PLpR68gbIfkKnP7m8D04V40al1t8rAxDT0 (5000 item list) resulted in 1.2MB
-            {maxBuffer: 1024 * 1024 * 8},
-            (error, stdout, stderr) => {
-                if (error) {
-                    console.error(`exec error: ${error}`);
+            {maxBuffer: 1024 * 1024 * 8}
+        );
+
+        currentShowPromise.then((std) => {
+            let items = std.stdout.toString().trim().split("\n");
+
+            items.forEach((item) => {
+                if (limit < 1) {
+                    return false;
+                }
+
+                if (!(item && item.trim())) {
                     return;
                 }
 
-                let items = stdout.toString().trim().split("\n");
-                stdout = null;
+                let data;
+                try {
+                    data = JSON.parse(item);
+                } catch (e) {
+                    console.log('JSON parse failed');
+                    console.log(item);
+                }
 
-                let youtubeId;
-                items.forEach((item) => {
-                    if (limit < 1) {
-                        return false;
-                    }
+                if (!(data && data.title) || bannedTitles.indexOf(data.title) > -1) {
+                    return;
+                }
 
-                    if (!(item && item.trim())) {
-                        return;
-                    }
-
-                    let data;
-                    try {
-                        data = JSON.parse(item);
-                    } catch (e) {
-                        console.log('JSON parse failed');
-                        console.log(item);
-                    }
-
-                    if (!(data && data.title) || bannedTitles.indexOf(data.title) > -1) {
-                        return;
-                    }
-
+                let videoData = {
+                    show, 
+                    title: data.title,
                     // For single videos use `data.id`
-                    youtubeId = data.url || data.id;
+                    youtubeId: data.url || data.id
+                };
 
-                    if (youtubeId) {
-                        let videoId = makeId(youtubeId);
-                        let downloadHistory = Helpers.getHistory(videoId);
+                videos.push(videoData);
+            });
+        });
 
-                        if (!downloadHistory) {
-                            handleDryVideoItem(show, data.title, youtubeId);
-                            limit--;
-                        }
+        currentShowPromise.catch((error) => {
+            console.error(`exec error: ${error}`);
+            return;
+        })
 
-                        // Dirty hack to add names on next run...SHAMEFUL and basically it's own bug
-                        if (downloadHistory && !downloadHistory.originalTitle) {
-                            Helpers.updateHistory(videoId, {'originalTitle': data.title});
-                        }
-                    }
-                });
+        promises.push(currentShowPromise);
+    });
+
+    Promise.all(promises).then(() => {
+        // Shuffle array to prevent video without match yet clogging up other channels
+        videos = Helpers.shuffleArray(videos);
+
+        videos.forEach((data) => {
+            let videoId = makeId(data.youtubeId);
+            let downloadHistory = Helpers.getHistory(videoId);
+
+            if (!downloadHistory) {
+                // handleDryVideoItem(show, data.title, data.youtubeId);
+                console.log('trying: ' + data.title);
+                limit--;
             }
-        );
+
+            // Dirty hack to add names on next run...SHAMEFUL and basically it's own bug
+            if (downloadHistory && !downloadHistory.originalTitle) {
+                Helpers.updateHistory(videoId, {'originalTitle': data.title});
+            }
+        });
+        
+    }).catch((e) => {
+        console.log('Unknown error');
+        console.error(e);
+        process.exit(1)
     });
 }
