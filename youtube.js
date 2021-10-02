@@ -124,8 +124,7 @@ if (settings && settings.shows) {
             let downloadHistory = Helpers.getHistory(videoId);
 
             if (!downloadHistory) {
-                // handleDryVideoItem(show, data.title, data.youtubeId);
-                console.log('trying: ' + data.title);
+                handleDryVideoItem(data.show, data.title, data.youtubeId);
                 limit--;
             }
 
