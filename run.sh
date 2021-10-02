@@ -14,7 +14,7 @@ touch /var/log/cron.log
 chmod +x /app/{nhk,youtube}.sh
 
 echo "0 5 * * * . $HOME/.env; /app/nhk.sh >> /var/log/cron.log 2>&1
-0 1 * * 2 . $HOME/.env; /app/youtube.sh >> /var/log/cron.log 2>&1
+0 10 * * */3 . $HOME/.env; /app/youtube.sh >> /var/log/cron.log 2>&1
 # This extra line makes it a valid cron" > /app/scheduler.txt
 crontab /app/scheduler.txt
 
