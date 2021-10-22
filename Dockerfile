@@ -23,8 +23,8 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends mktorrent cr
 # Debian no longer has a `python` command but youtube-dl still uses it
 RUN ln -s /usr/bin/python3 /usr/local/bin/python
 
-RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && \
-    chmod a+rx /usr/local/bin/yt-dlp && yt-dlp --version
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/bin/yt-dlp && \
+    chmod a+rx /usr/bin/yt-dlp && yt-dlp --version
     
 COPY package*.json /app/
 RUN cd /app/ && npm ci
