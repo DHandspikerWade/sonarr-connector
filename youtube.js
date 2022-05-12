@@ -21,10 +21,6 @@ function handleDryVideoItem(show, title, watchId) {
     }
 
     Helpers.getFileName(show.showId, newTitle, (episodes) => {
-        if (episodes.length === 1) {
-            return episodes[0];
-        }
-
         let i;
         for (const [regexStr, replacementData] of Object.entries(show.matchReplacements || {})) {
             // TODO: Is there a good way to reuse the RegExp obj?
