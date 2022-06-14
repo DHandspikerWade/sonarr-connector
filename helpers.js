@@ -95,6 +95,8 @@ module.exports = function (argv) {
                 '--no-warnings', 
                 '--no-progress', 
                 '--no-color',
+                '--cookies',
+                '/cookies.txt',
                 '--ignore-errors', 
                 '--youtube-skip-dash-manifest',
                 '--get-filename', 
@@ -147,6 +149,8 @@ module.exports = function (argv) {
                                 '--all-subs',
                                 '-c',
                                 '--embed-subs',
+                                '--cookies',
+                                '/cookies.txt',
                                 '--youtube-skip-dash-manifest',
                                 '--merge-output-format', 'mkv',
                                 '-o', outputFile,
@@ -285,7 +289,7 @@ module.exports = function (argv) {
             if (!resolution) { // TODO: Is there a better way? Maybe within an earlier JSON feed?
                 self.queueShell(
                     // Ask youtube-dl what resolution it's going to download
-                    'yt-dlp --no-warnings --no-progress --no-color --youtube-skip-dash-manifest --ignore-errors -f \'' + EXPECTED_QUALITY + '\' --get-filename -o \'%(height)s\' \'' + url + '\'',
+                    'yt-dlp --no-warnings --no-progress --no-color --cookies /cookies.txt --youtube-skip-dash-manifest --ignore-errors -f \'' + EXPECTED_QUALITY + '\' --get-filename -o \'%(height)s\' \'' + url + '\'',
                     (error, stdout, stderr) => {
                         if (error) {
                             console.error(`exec error: ${error}`);
