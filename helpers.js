@@ -407,7 +407,7 @@ module.exports = function (argv) {
 
         toCompareSlug: function(input) {
             input = input || '';
-            return input.trim().normalize('NFD').toLowerCase().replace(/[^a-z0-9 -]+/g, ' ').replace(/\s+/g, '-').replace(/\-+/g, '-').replace(/\~/g, '_').replace(/\_+/g, '_');
+            return input.trim().normalize('NFKD').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 -]+/g, ' ').replace(/\s+/g, '-').replace(/\-+/g, '-').replace(/\~/g, '_').replace(/\_+/g, '_');
         },
 
         queueShell: genericShellQueue(new Queue(2, Infinity)),
