@@ -41,7 +41,7 @@ let promises = [];
 if (settings && settings.shows) {
     settings.shows.forEach((show) => {
         promises[promises.length] = new Promise((finished) => {
-            https.get('https://api.nhk.or.jp/nhkworld/vodesdlist/v7a/program/' + show.nhkSlug + '/en/all/all.json?apikey=EJfK8jdS57GqlupFgAfAAwr573q01y6k', (resp) => {
+            https.get('https://nwapi.nhk.jp/nhkworld/vodesdlist/v7b/program/' + show.nhkSlug + '/en/all/all.json', (resp) => {
             let data = '';
 
             resp.on('data', (chunk) => {
