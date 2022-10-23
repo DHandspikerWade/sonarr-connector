@@ -242,8 +242,9 @@ module.exports = function (argv) {
 
             return 0;
         },
-        youtubeDl: function (id, url, output, quality, resolution) {
+        youtubeDl: function (id, url, output, quality, resolution, limiter) {
             quality = quality || 'WEBRip';
+            limiter = limiter || EXPECTED_QUALITY;
             let filename;
 
             const afterDownload = (torrentFile) => {
@@ -289,7 +290,7 @@ module.exports = function (argv) {
             if (!resolution) { // TODO: Is there a better way? Maybe within an earlier JSON feed?
                 self.queueShell(
                     // Ask youtube-dl what resolution it's going to download
-                    'yt-dlp --no-warnings --no-progress --no-color --cookies /cookies.txt --youtube-skip-dash-manifest --ignore-errors -f \'' + EXPECTED_QUALITY + '\' --get-filename -o \'%(height)s\' \'' + url + '\'',
+                    'yt-dlp --no-warnings --no-progress --no-color --cookies /cookies.txt --youtube-skip-dash-manifest --ignore-errors -f \'' + limiter + '\' --get-filename -o \'%(height)s\' \'' + url + '\'',
                     (error, stdout, stderr) => {
                         if (error) {
                             console.error(`exec error: ${error}`);
@@ -297,7 +298,6 @@ module.exports = function (argv) {
                         }
 
                         let string = stdout.toString();
-
                         if (string) {
                             resolution = string.trim() + 'p';
                             filename = (output + '.English.' + resolution + '.' + quality).replace('(', '').replace(')', '');

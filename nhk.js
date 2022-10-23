@@ -24,7 +24,8 @@ function handleVideoData(data, programSlug, showId, show) {
 
         Helpers.getFileName(showId, newTitle).then((newfile) => {
             if (newfile) {
-                Helpers.youtubeDl(makeId(data), getVodURL(data), newfile, 'WEB-DL');
+                // Force 702p as NHK's CDN corrupts their own 1080p videos (https://github.com/yt-dlp/yt-dlp/issues/3666)
+                Helpers.youtubeDl(makeId(data), getVodURL(data), newfile, 'WEB-DL', '[width<=1280]');
             }
         });
     }
@@ -50,10 +51,14 @@ if (settings && settings.shows) {
 
             resp.on('end', () => {
                 try {
+
+                    // console.log(data);
                     let items = JSON.parse(data);
+                    console.log(items)
+
                     items.data.episodes.forEach((item) => episodes.push({show, data: item}));
                 } catch (e) {
-
+                    console.log(e)
                 }
 
                 finished();
