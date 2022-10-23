@@ -6,7 +6,8 @@ const Helpers = require('./helpers')(argv);
 const NHK_HOST = 'https://www3.nhk.or.jp';
 
 function makeId(data) {
-    return 'nhk_' + data.vod_id;
+    // @TODO Remove marking when no longer forcing 720p
+    return 'nhk_' + data.vod_id + '-limited-720';
 }
 
 function getVodURL(data) {
