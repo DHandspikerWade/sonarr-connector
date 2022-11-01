@@ -88,7 +88,7 @@ module.exports = function (argv) {
         }).then(() => {}).catch((e) => { console.log('SHELL CATCH: ' + e)})
     }
 
-    function getProcessedFilename(filename, url) {
+    function getProcessedFilename(filename, url, limiter) {
         return new Promise((resolve) => {
             self.queueShell(shellescape([
                 'yt-dlp', 
@@ -100,7 +100,7 @@ module.exports = function (argv) {
                 '--ignore-errors', 
                 '--youtube-skip-dash-manifest',
                 '--get-filename', 
-                '-f', (DEBUG ? DEBUG_QUALITY : EXPECTED_QUALITY), 
+                '-f', (DEBUG ? DEBUG_QUALITY : limiter), 
                 '--merge-output-format', 'mkv', 
                 '-o', filename + '.%(ext)s', 
                 url
@@ -115,7 +115,7 @@ module.exports = function (argv) {
         });
     }
 
-    function downloadVideo(url, filename) {
+    function downloadVideo(url, filename, limiter) {
         if (last_disk_availible >= 0 && last_disk_availible < MIN_DISK_SPACE) {
             // Don't brother. Disk is already full
             return Promise.resolve(false);
@@ -137,7 +137,7 @@ module.exports = function (argv) {
                 }
 
                 if (res.statusCode >= 200 && res.statusCode < 400) {
-                    getProcessedFilename(filename, downloadUrl).then((properFilename) => {
+                    getProcessedFilename(filename, downloadUrl, limiter).then((properFilename) => {
                         if (properFilename) {
                             let outputFile = fileDestination + properFilename;
                             
@@ -145,7 +145,7 @@ module.exports = function (argv) {
                             queueDownload(shellescape([
                                 'yt-dlp',
                                 '--add-metadata',
-                                '-f', (DEBUG ? DEBUG_QUALITY : EXPECTED_QUALITY),
+                                '-f', (DEBUG ? DEBUG_QUALITY : limiter),
                                 '--all-subs',
                                 '-c',
                                 '--embed-subs',
@@ -301,13 +301,13 @@ module.exports = function (argv) {
                         if (string) {
                             resolution = string.trim() + 'p';
                             filename = (output + '.English.' + resolution + '.' + quality).replace('(', '').replace(')', '');
-                            downloadVideo(url, filename).then(afterDownload);
+                            downloadVideo(url, filename, limiter).then(afterDownload);
                         }
                     }
                 );
             } else {
                 filename = (output + '.English.' + resolution + '.' + quality).replace('(', '').replace(')', '');
-                downloadVideo(url, filename).then(afterDownload);
+                downloadVideo(url, filename, limiter).then(afterDownload);
             }
         },
 
