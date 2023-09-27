@@ -12,16 +12,24 @@ ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
-RUN apt-get update && apt-get install -y -q --no-install-recommends mktorrent cron curl ffmpeg \
-    && curl -sL https://deb.nodesource.com/setup_14.x | bash - \
-    && apt-get install -y nodejs \
-    && node -v \
+RUN apt-get update && apt-get install -y -q --no-install-recommends ca-certificates curl gnupg cron \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /usr/share/doc/* \
     && rm -rf /usr/share/man/*
 
-# Debian no longer has a `python` command but youtube-dl still uses it
-RUN ln -s /usr/bin/python3 /usr/local/bin/python
+# Install NodeJS 18 LTS from nodesource
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list \
+    && apt-get update && apt-get install -y -q --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /usr/share/doc/* \
+    && rm -rf /usr/share/man/*
+
+RUN apt-get update && apt-get install -y -q --no-install-recommends mktorrent ffmpeg python3 \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /usr/share/doc/* \
+    && rm -rf /usr/share/man/*
 
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/bin/yt-dlp && \
     chmod a+rx /usr/bin/yt-dlp && yt-dlp --version
