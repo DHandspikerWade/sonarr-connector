@@ -1,0 +1,36 @@
+kind: pipeline
+type: docker
+name: build
+
+steps:
+- name: Build & publish (amd64)
+  image: thegeeklab/drone-docker-buildx:23
+  privileged: true
+  settings:
+    username:
+      from_secret: docker_username
+    password: 
+      from_secret: docker_password
+    build_args: "BUILD_DATE=${DRONE_BUILD_STARTED}"
+    repo: handspiker2/sonarr-connector
+    tags: latest
+    dry_run: false
+    platforms: [linux/amd64]
+  when:
+    branch:
+    - master
+
+# Just test build branches
+- name: Build (x86_64)
+  image: thegeeklab/drone-docker-buildx:23
+  privileged: true
+  settings:
+    build_args: "BUILD_DATE=${DRONE_BUILD_STARTED}"
+    repo: handspiker2/sonarr-connector
+    tags: latest
+    dry_run: true
+    platforms: [linux/amd64]
+  when:
+    branch:
+      exclude:
+      - master
