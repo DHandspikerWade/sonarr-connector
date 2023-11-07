@@ -149,6 +149,7 @@ module.exports = function (argv) {
                                 '--all-subs',
                                 '-c',
                                 '--embed-subs',
+                                '--no-mtime',
                                 '--cookies',
                                 '/cookies.txt',
                                 '--youtube-skip-dash-manifest',
