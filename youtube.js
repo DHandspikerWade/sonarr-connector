@@ -20,7 +20,7 @@ function handleDryVideoItem(show, title, watchId) {
         newTitle = newTitle.replace(new RegExp(regexStr, 'g'), replacement);
     }
 
-    Helpers.getFileName(show.showId, newTitle, (episodes) => {
+        Helpers.getFileName(show.showId, newTitle, (episodes) => {
         let i;
         for (const [regexStr, replacementData] of Object.entries(show.matchReplacements || {})) {
             // TODO: Is there a good way to reuse the RegExp obj?
@@ -38,7 +38,7 @@ function handleDryVideoItem(show, title, watchId) {
         return false;
     }).then((newfile) => {
         if (newfile) {
-            Helpers.youtubeDl(makeId(watchId), 'https://www.youtube.com/watch?v=' + watchId, newfile, 'WEB-DL');
+            Helpers.youtubeDl(makeId(watchId), 'https://www.youtube.com/watch?v=' + watchId, newfile, 'WEB-DL', null, show.limiter);
         }
     });
 }
