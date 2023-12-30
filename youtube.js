@@ -7,11 +7,30 @@ const Helpers = require('./helpers')(argv);
 
 const bannedTitles = ['[Private video]', '[Deleted video]'];
 
-function makeId(youtubeId) {
-    return 'youtube_' + youtubeId;
+function makeId(videoId) {
+    // Keep youtube prefix for generic
+    return 'youtube_' + videoId;
 }
 
-function handleDryVideoItem(show, title, watchId) {
+function getVideoTitle(url) {
+    return new Promise((resolve) => {
+        Helpers.queueShell(
+            'yt-dlp --no-warnings --no-progress --no-color --cookies /cookies.txt --youtube-skip-dash-manifest --ignore-errors --get-filename -o \'%(title)s\' \'' + url + '\'',
+            (error, stdout, stderr) => {
+                const possibleTitle = (stdout.toString() || '').trim();
+
+                if (error || !possibleTitle) {
+                    resolve(null);
+                }
+    
+                resolve(possibleTitle);
+            }
+        );
+    })
+    
+}
+
+function handleDryVideoItem(show, title, watchId, url) {
     let newTitle = title;
     
     // Bring into the helpers?
@@ -20,7 +39,7 @@ function handleDryVideoItem(show, title, watchId) {
         newTitle = newTitle.replace(new RegExp(regexStr, 'g'), replacement);
     }
 
-        Helpers.getFileName(show.showId, newTitle, (episodes) => {
+    Helpers.getFileName(show.showId, newTitle, (episodes) => {
         let i;
         for (const [regexStr, replacementData] of Object.entries(show.matchReplacements || {})) {
             // TODO: Is there a good way to reuse the RegExp obj?
@@ -38,7 +57,7 @@ function handleDryVideoItem(show, title, watchId) {
         return false;
     }).then((newfile) => {
         if (newfile) {
-            Helpers.youtubeDl(makeId(watchId), 'https://www.youtube.com/watch?v=' + watchId, newfile, 'WEB-DL', null, show.limiter);
+            Helpers.youtubeDl(makeId(watchId), url, newfile, 'WEB-DL.PROPER', null, show.limiter);
         }
     });
 }
@@ -88,14 +107,15 @@ if (settings && settings.shows) {
                     console.log(item);
                 }
 
-                if (!(data && data.title) || bannedTitles.indexOf(data.title) > -1) {
+                if (!data || (data.title && bannedTitles.indexOf(data.title) > -1) ) {
                     return;
                 }
 
                 let videoData = {
                     show, 
                     title: data.title,
-                    youtubeId: data.id
+                    videoId: data.id,
+                    url: data.url
                 };
 
                 videos.push(videoData);
@@ -115,16 +135,23 @@ if (settings && settings.shows) {
         videos = Helpers.shuffleArray(videos);
 
         videos.forEach((data) => {
-            let videoId = makeId(data.youtubeId);
+            let videoId = makeId(data.videoId);
             let downloadHistory = Helpers.getHistory(videoId);
 
             if (!downloadHistory && limit > 0) {
-                handleDryVideoItem(data.show, data.title, data.youtubeId);
                 limit--;
+
+                if (data.title) {
+                    handleDryVideoItem(data.show, data.title, videoId, data.url);
+                } else { // Not all extactors include title when loading by playlist
+                    getVideoTitle(data.url).then((title) => {
+                        handleDryVideoItem(data.show, title, videoId, data.url);
+                    });
+                }
             }
 
             // Dirty hack to add names on next run...SHAMEFUL and basically it's own bug
-            if (downloadHistory && !downloadHistory.originalTitle) {
+            if (downloadHistory && !downloadHistory.originalTitle && data.title) {
                 Helpers.updateHistory(videoId, {'originalTitle': data.title});
             }
         });
