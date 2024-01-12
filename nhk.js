@@ -82,7 +82,7 @@ if (settings && settings.shows) {
             return 0;
         });
 
-        let limit = 10;
+        let limit = 20;
         episodes.forEach(element => {
             let videoId = makeId(element.data);
             let downloadHistory = Helpers.getHistory(videoId);
