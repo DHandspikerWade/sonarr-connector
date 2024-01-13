@@ -102,6 +102,7 @@ module.exports = function (argv) {
                 '--get-filename', 
                 '-f', (DEBUG ? DEBUG_QUALITY : limiter), 
                 '--merge-output-format', 'mkv', 
+                '--remux-video', 'mkv',
                 '-o', filename + '.%(ext)s', 
                 url
             ]),  (error, stdout) => {
@@ -154,6 +155,7 @@ module.exports = function (argv) {
                                 '/cookies.txt',
                                 '--youtube-skip-dash-manifest',
                                 '--merge-output-format', 'mkv',
+                                '--remux-video', 'mkv',
                                 '-o', outputFile,
                                 downloadUrl
                             ]), (error) => {
