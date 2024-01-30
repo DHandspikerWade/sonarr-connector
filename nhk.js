@@ -52,10 +52,7 @@ if (settings && settings.shows) {
 
             resp.on('end', () => {
                 try {
-
-                    // console.log(data);
                     let items = JSON.parse(data);
-                    // console.log(items)
 
                     items.data.episodes.forEach((item) => episodes.push({show, data: item}));
                 } catch (e) {
@@ -82,23 +79,50 @@ if (settings && settings.shows) {
             return 0;
         });
 
-        let limit = 20;
+        let downloadHistory, videoId, episode;
+
+        // TODO: Actually properly fix this. This is such a waste.
+        // Correct invalid titles 
         episodes.forEach(element => {
-            let videoId = makeId(element.data);
-            let downloadHistory = Helpers.getHistory(videoId);
+            videoId = makeId(element.data);
+            downloadHistory = Helpers.getHistory(videoId);
 
-            if (limit > 0) {
-                if (!downloadHistory) {
-                    handleVideoData(element.data, element.show.nhkSlug, element.show.showId, element.show);
-                    limit--;
-                }
-            } 
-
-            // Dirty hack to add names on next run...SHAMEFUL and basically it's own bug
             if (downloadHistory && !downloadHistory.originalTitle) {
                 Helpers.updateHistory(videoId, {'originalTitle': element.data.sub_title_clean || element.data.subtitle});
             }
         });
+
+        /*
+         * NHK started uploading clips onto the same page. This creates a situation where there is a bunch of clips that expire earlier
+         * than the full videos and so they are always sorted higher. To work around this, check for the expiring video then recheck 
+         * the remaining randomly. It's a middle-ground to keep prioritization expiring videos for datahoarding, but still try to find 
+         * new episodes in a timely fashion. 
+         */
+
+        let limit = 10;
+        while (episodes.length > 0 && limit > 0) {
+            episode = episodes.pop();
+            videoId = makeId(episode.data);
+            downloadHistory = Helpers.getHistory(videoId);
+            if (!downloadHistory) {
+                handleVideoData(episode.data, episode.show.nhkSlug, episode.show.showId, episode.show);
+                limit--;
+            }
+        }
+
+        episodes = Helpers.shuffleArray(episodes);
+
+        limit = 10;
+        while (episodes.length > 0 && limit > 0) {
+            episode = episodes.pop();
+            videoId = makeId(episode.data);
+            downloadHistory = Helpers.getHistory(videoId);
+            if (!downloadHistory) {
+                handleVideoData(episode.data, episode.show.nhkSlug, episode.show.showId, episode.show);
+                limit--;
+            }
+        }
+
     }).catch((e) => {
         console.log('Unknown error');
         console.error(e);
