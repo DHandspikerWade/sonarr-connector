@@ -103,7 +103,7 @@ module.exports = function (argv) {
                 '-f', (DEBUG ? DEBUG_QUALITY : limiter), 
                 '--merge-output-format', 'mkv', 
                 '--remux-video', 'mkv',
-                '-o', filename + '.%(ext)s', 
+                '-o', filename + '.mkv', 
                 url
             ]),  (error, stdout) => {
                 if (error) {
@@ -111,7 +111,11 @@ module.exports = function (argv) {
                     return;
                 }
 
-                resolve((stdout.toString() || '').trim());
+                let filename = (stdout.toString() || '').trim();
+                // Even when saying remux everything to mkv, yt-dlp outputs other extensions for single format sources for '--get-filename'
+                filename = filename.replace(/\.[^\.]+$/, '.mkv');
+            
+                resolve(filename);
             });
         });
     }
@@ -160,6 +164,7 @@ module.exports = function (argv) {
                                 downloadUrl
                             ]), (error) => {
                                 if (error) {
+                                    console.log(error);
                                     downloaded(false);
                                     return;
                                 }
@@ -177,7 +182,7 @@ module.exports = function (argv) {
                                                 '-t', 1,
                                                 '-c', 'Made with Sonarr Archiver',
                                                 '-a', 'udp://127.0.0.1',
-                                                '-w', webDestination + properFilename,
+                                                 '-w', webDestination + properFilename,
                                                 '-o', outputFile + '.torrent',
                                                 outputFile
                                             ]), (error) => { 
