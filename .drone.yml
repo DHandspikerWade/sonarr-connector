@@ -11,7 +11,7 @@ steps:
       from_secret: docker_username
     password: 
       from_secret: docker_password
-    build_args: "BUILD_DATE=${DRONE_BUILD_STARTED}"
+    build_args: "BUILD_DATE=${DRONE_BUILD_STARTED} GIT_COMMIT=${DRONE_COMMIT}"
     repo: handspiker2/sonarr-connector
     tags: latest
     dry_run: false
@@ -25,7 +25,7 @@ steps:
   image: thegeeklab/drone-docker-buildx:23
   privileged: true
   settings:
-    build_args: "BUILD_DATE=${DRONE_BUILD_STARTED}"
+    build_args: "BUILD_DATE=${DRONE_BUILD_STARTED}  GIT_COMMIT=${DRONE_COMMIT}"
     repo: handspiker2/sonarr-connector
     tags: latest
     dry_run: true

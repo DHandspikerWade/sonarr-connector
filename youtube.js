@@ -62,7 +62,7 @@ function handleDryVideoItem(show, title, watchId, url) {
     });
 }
 
-console.log('starting');
+console.log('Starting youtube.js');
 Helpers.init();
 
 let settings = fs.readFileSync(__dirname + '/youtube.json', 'UTF-8');

@@ -1,12 +1,12 @@
 {
-  "name": "sonarr-nhk-adapter",
+  "name": "sonarr-connector",
   "version": "0.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "handspiker2",
+  "author": "DHandspikerWade",
   "license": "ISC",
   "dependencies": {
     "diskusage-ng": "^1.0.1",

@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "Docker container has been started"
+echo "Container has been started"
 
 touch $HOME/.env
 echo "export LC_ALL=en_US.UTF-8" >> $HOME/.env
@@ -20,6 +20,6 @@ echo "0 5 * * * sh -c '. $HOME/.env; /app/nhk.sh >> /var/log/cron.log 2>&1'
 crontab /app/scheduler.txt
 
 service cron start
+echo "Cron has been started"
 
-echo $@
 exec "$@"
