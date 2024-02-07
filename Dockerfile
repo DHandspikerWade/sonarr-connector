@@ -42,9 +42,9 @@ ENV SONARR_HOST ''
 ENV SONARR_KEY ''
 ENV SEED_HOST ''
 
-ARG BUILD_DATE
+ARG DOCKER_IMAGE_CREATED
 ARG GIT_COMMIT
 
 LABEL org.opencontainers.image.base.name="nginx:stable-bullseye"
-LABEL org.opencontainers.image.created=$BUILD_DATE
+LABEL org.opencontainers.image.created=$DOCKER_IMAGE_CREATED
 LABEL org.opencontainers.image.revision=$GIT_COMMIT
