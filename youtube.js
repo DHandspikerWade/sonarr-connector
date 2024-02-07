@@ -57,7 +57,7 @@ function handleDryVideoItem(show, title, watchId, url) {
         return false;
     }).then((newfile) => {
         if (newfile) {
-            Helpers.youtubeDl(makeId(watchId), url, newfile, 'WEB-DL.PROPER', null, show.limiter);
+            Helpers.youtubeDl(makeId(watchId), url, newfile, 'WEB-DL', null, show.limiter);
         }
     });
 }
