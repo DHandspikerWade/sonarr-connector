@@ -7,7 +7,7 @@ const NHK_HOST = 'https://www3.nhk.or.jp';
 
 function makeId(data) {
     // @TODO Remove marking when no longer forcing 720p
-    return 'nhk_' + data.vod_id + '-limited-720';
+    return 'nhk_' + data.vod_id;
 }
 
 function getVodURL(data) {
@@ -25,8 +25,7 @@ function handleVideoData(data, programSlug, showId, show) {
 
         Helpers.getFileName(showId, newTitle).then((newfile) => {
             if (newfile) {
-                // Force 702p as NHK's CDN corrupts their own 1080p videos (https://github.com/yt-dlp/yt-dlp/issues/3666)
-                Helpers.youtubeDl(makeId(data), getVodURL(data), newfile, 'WEB-DL', null, 'bestvideo[height<=720]+bestaudio/best[height<=720]');
+                Helpers.youtubeDl(makeId(data), getVodURL(data), newfile, 'WEB-DL', null, 'bestvideo+bestaudio/best');
             }
         });
     }
