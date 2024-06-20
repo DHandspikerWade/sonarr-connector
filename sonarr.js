@@ -97,7 +97,7 @@ class Sonarr {
         }
 
         // Completed API URL
-        this.serverApi = serverUrl + '/api/';
+        this.serverApi = serverUrl + '/api/v3/';
     }
 
     /*

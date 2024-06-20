@@ -260,7 +260,7 @@ module.exports = function (argv) {
                     self.addHistory(id, url, resolution, filename)
 
                     if (!DEBUG) {
-                        let req = https.request((SONARR_OPTIONS.ssl ? 'https://' : 'http://') + SONARR_OPTIONS.hostname + '/api/release/push', {
+                        let req = https.request((SONARR_OPTIONS.ssl ? 'https://' : 'http://') + SONARR_OPTIONS.hostname + '/api/v3/release/push', {
                             method: 'POST',    
                             headers: {
                                 'Content-Type': 'application/json',
