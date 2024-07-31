@@ -31,7 +31,8 @@ function getVideoTitle(url) {
 }
 
 function handleDryVideoItem(show, title, watchId, url) {
-    let newTitle = title;
+    // TODO: Why is this ever null? Randomly title is null with no clear pattern. Needs investigation. 
+    let newTitle = title || "";
     
     // Bring into the helpers?
     for (const [regexStr, replacement] of Object.entries(show.titleReplacements || {})) {
