@@ -330,7 +330,7 @@ module.exports = function (argv) {
             return new Promise((resolve) => {
                 self.findSonarrDetails(showId, '').then((x) => {
                     if (!episodeSlug) {
-                        resolve(filter(episodeList[showId] ? episodeList[showId].values() : []));
+                        resolve(filter(Object.values(episodeList[showId])));
                     } else if (typeof filter === 'function') {
                         resolve(filter(episodeSlug in episodeList[showId] ? episodeList[showId][episodeSlug] : []));
                     } else {
