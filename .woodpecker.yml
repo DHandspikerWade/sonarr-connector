@@ -1,17 +1,14 @@
-kind: pipeline
-type: docker
-name: build
-
 steps:
 - name: Build & publish (amd64)
-  image: thegeeklab/drone-docker-buildx:23
   privileged: true
+  image: woodpeckerci/plugin-docker-buildx
   settings:
+    auto_labels: false
     username:
       from_secret: docker_username
     password: 
       from_secret: docker_password
-    build_args: "GIT_COMMIT=${DRONE_COMMIT}"
+    build_args: "GIT_COMMIT=${CI_COMMIT_SHA}"
     repo: handspiker2/sonarr-connector
     tags: latest
     dry_run: false
@@ -22,9 +19,10 @@ steps:
 
 # Just test build branches
 - name: Build (x86_64)
-  image: thegeeklab/drone-docker-buildx:23
   privileged: true
+  image: woodpeckerci/plugin-docker-buildx
   settings:
+    auto_labels: false
     build_args: "GIT_COMMIT=${DRONE_COMMIT}"
     repo: handspiker2/sonarr-connector
     tags: latest
