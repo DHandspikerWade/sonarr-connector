@@ -44,7 +44,7 @@ function handleDryVideoItem(show, title, watchId, url) {
         let i;
         for (const [regexStr, replacementData] of Object.entries(show.matchReplacements || {})) {
             // TODO: Is there a good way to reuse the RegExp obj?
-            if (title.match(new RegExp(regexStr, 'g'))) {
+            if (newTitle.match(new RegExp(regexStr, 'g'))) {
                 episodes = episodes.filter((episode) => {
                     return (episode.season == replacementData.season || episode.season == 0);
                 });
