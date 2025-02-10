@@ -23,7 +23,7 @@ steps:
   image: woodpeckerci/plugin-docker-buildx
   settings:
     auto_labels: false
-    build_args: "GIT_COMMIT=${DRONE_COMMIT}"
+    build_args: "GIT_COMMIT=${CI_COMMIT_SHA}"
     repo: handspiker2/sonarr-connector
     tags: latest
     dry_run: true

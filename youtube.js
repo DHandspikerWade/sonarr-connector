@@ -71,7 +71,7 @@ settings = JSON.parse(settings);
 
 const promisingExec = util.promisify(child_process.exec);
 
-let limit = 20;
+let limit = Helpers.getDownloadLimit();
 if (settings && settings.shows) {
     let videos = [];
     let promises = [];

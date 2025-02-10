@@ -420,6 +420,14 @@ module.exports = function (argv) {
 
         queueShell: genericShellQueue(new Queue(2, Infinity)),
 
+        getDownloadLimit: function() {
+            if (process.env.DOWNLOAD_LIMIT && (process.env.DOWNLOAD_LIMIT * 1)) {
+                return process.env.DOWNLOAD_LIMIT;
+            }
+
+            return 20;
+        },
+
         getFileName: function(showId, title, filter) {
             return new Promise((resolve) => {
                 let compareSlug = self.toCompareSlug(title);

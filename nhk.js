@@ -98,7 +98,7 @@ if (settings && settings.shows) {
          * new episodes in a timely fashion. 
          */
 
-        let limit = 10;
+        let limit = Helpers.getDownloadLimit() - 10;
         while (episodes.length > 0 && limit > 0) {
             episode = episodes.pop();
             videoId = makeId(episode.data);
@@ -111,7 +111,7 @@ if (settings && settings.shows) {
 
         episodes = Helpers.shuffleArray(episodes);
 
-        limit = 10;
+        limit = Math.min(10, Helpers.getDownloadLimit());
         while (episodes.length > 0 && limit > 0) {
             episode = episodes.pop();
             videoId = makeId(episode.data);
