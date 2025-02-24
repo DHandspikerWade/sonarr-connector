@@ -231,6 +231,7 @@ module.exports = function (argv) {
                     downloadTime: Date.now() / 1000,
                     filename: filename
                  }).write();
+                 console.log("Added history item for " + id);
             } else {
                 self.updateHistory(id, {
                     url: url, 
@@ -245,6 +246,7 @@ module.exports = function (argv) {
             let items =  historyDb.get('downloaded').filter({'id': id}).value();
             if (items.length > 0) {
                 historyDb.get('downloaded').find({'id': id}).assign(fields).write();
+                console.log("Updated history item for " + id);
                 return items.length;
             }
 
